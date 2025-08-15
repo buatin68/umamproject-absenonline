@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Absensi Online - SDIT NURUL HIKMAH</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #0046FF 0%, #0056FF 50%, #0066FF 100%); }
+        .card-shadow { box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .glossy-btn {
+            background: linear-gradient(145deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1), 0 4px 16px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .glossy-btn:before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        .glossy-btn:hover:before { left: 100%; }
+        .glossy-btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15), 0 8px 24px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.4);
+        }
+        .glossy-success { background: linear-gradient(145deg, #059669, #047857); color: white; }
+        .glossy-warning { background: linear-gradient(145deg, #d97706, #b45309); color: white; }
+        .glossy-info { background: linear-gradient(145deg, #0284c7, #0369a1); color: white; }
+        .glossy-danger { background: linear-gradient(145deg, #dc2626, #b91c1c); color: white; }
+        .glossy-neutral { background: linear-gradient(145deg, #6b7280, #4b5563); color: white; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); }
+        }
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            #mainApp { background: white !important; }
+            .rounded-2xl, .card-shadow { box-shadow: none !important; border: 1px solid #ccc; }
+            @page { size: A4; margin: 10mm; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px; }
+            .print-title { font-size: 16px; font-weight: bold; margin-bottom: 4px; }
+            .print-date { font-size: 12px; color: #666; }
+            .print-signature { display: block !important; margin-top: 30px; page-break-inside: avoid; }
+            .signature-section { display: flex; justify-content: space-between; margin-top: 40px; }
+            .signature-box { text-align: center; width: 200px; }
+            .signature-line { border-bottom: 1px solid #000; margin-top: 60px; margin-bottom: 5px; }
+            .print-footer { display: block !important; position: fixed; bottom: 10mm; left: 10mm; right: 10mm; text-align: center; font-size: 10px; color: #666; border-top: 1px solid #ddd; padding-top: 5px; }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-gray-800">
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center px-4">
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 w-full max-w-md card-shadow">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4"><span class="text-4xl">🏫</span></div>
+                <h1 class="text-3xl font-bold text-white mb-2">SDIT NURUL HIKMAH</h1>
+                <p class="text-white/80">Sistem Absensi Online</p>
+            </div>
+            <form onsubmit="handleLogin(event)" class="space-y-6">
+                <div>
+                    <label class="block text-white/90 font-semibold mb-2">Username</label>
+                    <input type="text" id="username" required class="w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50" placeholder="Masukkan username">
+                </div>
+                <div>
+                    <label class="block text-white/90 font-semibold mb-2">Password</label>
+                    <input type="password" id="password" required class="w-full px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/50" placeholder="Masukkan password">
+                </div>
+                <button type="submit" class="glossy-btn w-full py-3 rounded-xl font-semibold text-lg" style="background: linear-gradient(145deg, #0d9488, #14b8a6); color: white;">🔐 Masuk</button>
+            </form>
+            <div class="mt-6 p-4 bg-white/5 rounded-xl">
+                <h3 class="text-white font-semibold mb-2">Informasi Login:</h3>
+                <div class="text-white/70 text-sm space-y-1">
+                    <p><strong>Admin:</strong> admin / admin</p>
+                    <p><strong>Guru Kelas:</strong> nama kelas / 1234567</p>
+                    <p class="text-xs mt-2 text-white/50">Contoh: 1A / 1234567</p>
+                </div>
+            </div>
+            <div id="loginError" class="hidden mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-xl">
+                <p class="text-red-300 text-sm text-center">Username atau password salah!</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainApp" class="hidden">
+        <header class="bg-white/10 backdrop-blur-md border-b border-white/20 no-print">
+            <div class="container mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center"><span class="text-2xl">🏫</span></div>
+                        <div>
+                            <h1 class="text-white text-xl font-bold">SDIT NURUL HIKMAH</h1>
+                            <p class="text-white/80 text-sm">Sistem Absensi Online</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <div class="text-white text-right">
+                            <p class="font-semibold" id="currentDate"></p>
+                            <p class="text-sm opacity-80" id="currentTime"></p>
+                            <p class="text-xs opacity-60" id="currentUser"></p>
+                            <div class="flex items-center justify-end mt-1">
+                                <div id="connectionStatus" class="text-xs px-2 py-1 rounded-full bg-yellow-500/20 text-yellow-300">🔄 Checking...</div>
+                            </div>
+                        </div>
+                        <button onclick="logout()" class="glossy-btn glossy-danger px-4 py-2 rounded-lg font-semibold text-sm">🚪 Keluar</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="container mx-auto px-4 py-8">
+            <div class="bg-white/10 backdrop-blur-md rounded-2xl p-2 mb-8 no-print">
+                <div class="flex space-x-2">
+                    <button onclick="showTab('absensi')" id="tab-absensi" class="glossy-btn px-6 py-3 rounded-xl font-semibold flex-1"></button>
+                    <button onclick="showTab('laporan')" id="tab-laporan" class="glossy-btn px-6 py-3 rounded-xl font-semibold flex-1"></button>
+                    <button onclick="showTab('rekap')" id="tab-rekap" class="glossy-btn px-6 py-3 rounded-xl font-semibold flex-1"></button>
+                    <button onclick="showTab('grafik')" id="tab-grafik" class="glossy-btn px-6 py-3 rounded-xl font-semibold flex-1"></button>
+                    <button onclick="showTab('admin')" id="tab-admin" class="glossy-btn px-6 py-3 rounded-xl font-semibold flex-1"></button>
+                </div>
+            </div>
+
+            <div id="content-absensi" class="tab-content">
+                <div class="rounded-2xl p-6 md:p-8 card-shadow" style="background-color: #F8F8F8;">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                        <h2 class="text-2xl font-bold flex items-center"><span class="mr-3">👨‍🎓</span>Absensi Siswa</h2>
+                        <div class="grid grid-cols-4 gap-2">
+                            <div class="bg-green-600/90 rounded-lg p-2 text-center min-w-[40px] shadow-lg"><div class="text-lg font-bold text-white" id="hadirCount">0</div><div class="text-green-100 text-xs font-semibold">Hadir</div></div>
+                            <div class="bg-yellow-600/90 rounded-lg p-2 text-center min-w-[40px] shadow-lg"><div class="text-lg font-bold text-white" id="sakitCount">0</div><div class="text-yellow-100 text-xs font-semibold">Sakit</div></div>
+                            <div class="bg-blue-600/90 rounded-lg p-2 text-center min-w-[40px] shadow-lg"><div class="text-lg font-bold text-white" id="izinCount">0</div><div class="text-blue-100 text-xs font-semibold">Izin</div></div>
+                            <div class="bg-red-600/90 rounded-lg p-2 text-center min-w-[40px] shadow-lg"><div class="text-lg font-bold text-white" id="alphaCount">0</div><div class="text-red-100 text-xs font-semibold">Alpha</div></div>
+                        </div>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-6 mb-6">
+                        <div>
+                            <label class="block font-semibold mb-2">Pilih Kelas</label>
+                            <select id="kelasSelector" onchange="changeClass()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400/50"></select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-2">Tanggal Absensi</label>
+                            <input type="date" id="attendanceDate" onchange="changeClass()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-teal-400/50">
+                        </div>
+                        <div id="bulkAttendanceSection" class="hidden md:flex items-end">
+                            <div class="flex gap-2 w-full">
+                                <button onclick="markAllPresent()" class="glossy-btn flex-1 px-4 py-3 rounded-xl font-semibold text-sm" style="background: linear-gradient(145deg, #10b981, #059669); color: white;">✅ Hadir Semua</button>
+                                <button onclick="saveAllAttendance()" class="glossy-btn flex-1 px-4 py-3 rounded-xl font-semibold text-sm" style="background: linear-gradient(145deg, #8b5cf6, #7c3aed); color: white;">💾 Simpan</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-4" id="studentList"><p class="text-gray-500 text-center py-8">Pilih kelas untuk menampilkan daftar siswa</p></div>
+                </div>
+            </div>
+
+            <div id="content-laporan" class="tab-content">
+                <div class="rounded-2xl p-6 md:p-8 card-shadow" style="background-color: #F8F8F8;">
+                    <div class="flex justify-between items-center mb-6 no-print">
+                        <h2 class="text-2xl font-bold flex items-center"><span class="mr-3">📊</span>Laporan Absensi Harian</h2>
+                        <button onclick="exportReportToPDF()" class="glossy-btn glossy-info px-6 py-3 rounded-xl font-semibold">📄 Export PDF</button>
+                    </div>
+                    <div class="print-header hidden"><div class="print-title">LAPORAN ABSENSI SISWA</div><div class="print-title">SDIT NURUL HIKMAH</div><div class="print-date" id="printDate"></div></div>
+                    <div class="grid md:grid-cols-3 gap-4 mb-6 no-print">
+                        <div><label class="block font-semibold mb-2">Filter Kelas</label><select id="filterKelas" onchange="filterReport()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></select></div>
+                        <div><label class="block font-semibold mb-2">Tanggal Mulai</label><input type="date" id="startDate" onchange="filterReport()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></div>
+                        <div><label class="block font-semibold mb-2">Tanggal Akhir</label><input type="date" id="endDate" onchange="filterReport()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></div>
+                    </div>
+                    <div class="overflow-x-auto"><table class="w-full"><thead><tr class="border-b border-gray-300"><th class="text-left py-3 px-4 font-semibold">No</th><th class="text-left py-3 px-4 font-semibold">Tanggal</th><th class="text-left py-3 px-4 font-semibold">Nama Siswa</th><th class="text-left py-3 px-4 font-semibold">Kelas</th><th class="text-left py-3 px-4 font-semibold">Status</th><th class="text-left py-3 px-4 font-semibold">Waktu</th><th class="text-left py-3 px-4 font-semibold">Keterangan</th></tr></thead><tbody id="reportTable"></tbody></table></div>
+                    <div class="print-signature hidden"><div class="signature-section"><div class="signature-box"><div>Mengetahui,</div><div class="font-bold">Kepala SDIT Nurul Hikmah</div><div class="signature-line"></div><div class="font-bold">(H. Muhammad Syafei, S.Pd.I)</div></div><div class="signature-box"><div id="dailyReportDate">Bekasi, ...</div><div class="font-bold">Guru Kelas</div><div class="signature-line"></div><div class="font-bold" id="teacherNameSignatureDaily">(...........................)</div></div></div></div>
+                </div>
+            </div>
+
+            <div id="content-rekap" class="tab-content">
+                <div class="rounded-2xl p-6 md:p-8 card-shadow" style="background-color: #F8F8F8;">
+                    <div class="flex justify-between items-center mb-6 no-print">
+                        <h2 class="text-2xl font-bold flex items-center"><span class="mr-3">📋</span>Rekap Absensi Bulanan</h2>
+                        <div class="flex gap-3"><button onclick="exportMonthlyReportToPDF()" class="glossy-btn glossy-coral px-6 py-3 rounded-xl font-semibold">📄 Export PDF</button></div>
+                    </div>
+                    <div class="print-header hidden"><div class="print-title">REKAP ABSENSI BULANAN</div><div class="print-title">SDIT NURUL HIKMAH</div><div class="print-date" id="printMonthlyDate"></div></div>
+                    <div class="grid md:grid-cols-2 gap-4 mb-6 no-print">
+                        <div><label class="block font-semibold mb-2">Filter Kelas</label><select id="monthlyFilterKelas" onchange="generateMonthlyReport()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></select></div>
+                        <div><label class="block font-semibold mb-2">Bulan & Tahun</label><input type="month" id="monthlyPeriod" onchange="generateMonthlyReport()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></div>
+                    </div>
+                    <div class="grid md:grid-cols-4 gap-4 mb-6 no-print">
+                        <div class="bg-blue-500/20 rounded-xl p-4 text-center"><div class="text-2xl font-bold text-blue-800" id="monthlyWorkDays">0</div><div class="text-blue-700 text-sm font-semibold">Hari Kerja</div></div>
+                        <div class="bg-green-500/20 rounded-xl p-4 text-center"><div class="text-2xl font-bold text-green-800" id="monthlyAvgAttendance">0%</div><div class="text-green-700 text-sm font-semibold">Rata-rata Hadir</div></div>
+                        <div class="bg-yellow-500/20 rounded-xl p-4 text-center"><div class="text-2xl font-bold text-yellow-800" id="monthlyTotalStudents">0</div><div class="text-yellow-700 text-sm font-semibold">Total Siswa</div></div>
+                        <div class="bg-purple-500/20 rounded-xl p-4 text-center"><div class="text-2xl font-bold text-purple-800" id="monthlyTotalRecords">0</div><div class="text-purple-700 text-sm font-semibold">Total Absensi</div></div>
+                    </div>
+                    <div class="overflow-x-auto"><table class="w-full"><thead><tr class="border-b border-gray-300"><th class="text-left py-3 px-4 font-semibold">No</th><th class="text-left py-3 px-4 font-semibold">Nama Siswa</th><th class="text-left py-3 px-4 font-semibold">Kelas</th><th class="text-left py-3 px-4 font-semibold">Hadir</th><th class="text-left py-3 px-4 font-semibold">Sakit</th><th class="text-left py-3 px-4 font-semibold">Izin</th><th class="text-left py-3 px-4 font-semibold">Alpha</th><th class="text-left py-3 px-4 font-semibold">% Kehadiran</th></tr></thead><tbody id="monthlyReportTable"></tbody></table></div>
+                    <div class="print-signature hidden"><div class="signature-section"><div class="signature-box"><div>Mengetahui,</div><div class="font-bold">Kepala SDIT Nurul Hikmah</div><div class="signature-line"></div><div class="font-bold">(H. Muhammad Syafei, S.Pd.I)</div></div><div class="signature-box"><div id="monthlyReportDate">Bekasi, ...</div><div class="font-bold">Guru Kelas</div><div class="signature-line"></div><div class="font-bold" id="teacherNameSignature">(...........................)</div></div></div></div>
+                </div>
+            </div>
+
+            <div id="content-grafik" class="tab-content">
+                <div class="rounded-2xl p-6 md:p-8 card-shadow" style="background-color: #F8F8F8;">
+                    <h2 class="text-2xl font-bold mb-6">📈 Grafik Kehadiran</h2>
+                    <div class="grid md:grid-cols-2 gap-4 mb-6 no-print">
+                        <div><label class="block font-semibold mb-2">Pilih Kelas</label><select id="chartKelasSelector" onchange="generateCharts()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></select></div>
+                        <div><label class="block font-semibold mb-2">Pilih Bulan</label><input type="month" id="chartMonthSelector" onchange="generateCharts()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></div>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-8"><div class="min-h-[300px]"><h3 class="text-lg font-semibold text-center mb-2">Distribusi Status Absensi</h3><canvas id="statusPieChart"></canvas></div><div class="min-h-[300px]"><h3 class="text-lg font-semibold text-center mb-2">Tren Kehadiran Harian</h3><canvas id="dailyTrendChart"></canvas></div></div>
+                </div>
+            </div>
+
+            <div id="content-admin" class="tab-content">
+                <div class="rounded-2xl p-6 md:p-8 card-shadow" style="background-color: #F8F8F8;">
+                    <h2 class="text-2xl font-bold mb-6">⚙️ Panel Admin</h2>
+                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg" role="alert"><p class="font-bold">Peringatan: Tindakan Berbahaya</p><p>Tindakan di bawah ini akan menghapus data secara permanen dan tidak dapat diurungkan.</p></div>
+                    <div class="mt-6"><button onclick="clearAllData()" class="glossy-btn glossy-danger px-6 py-3 rounded-xl font-semibold">🗑️ Hapus Semua Data Absensi</button></div>
+                </div>
+            </div>
+            <div class="print-footer hidden"><div style="background: linear-gradient(90deg, #0d9488, #14b8a6); color: white; padding: 8px; border-radius: 15px; display: inline-block; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">✨ @2025_Umam Project ✨</div></div>
+        </main>
+    </div>
+
+    <div id="toast" class="fixed top-5 right-5 bg-green-500 text-white py-3 px-6 rounded-lg shadow-lg transform translate-x-full transition-transform duration-500 ease-in-out z-50"><p id="toastMessage"></p></div>
+
+    <div id="notesModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg p-6 w-full max-w-sm card-shadow fade-in">
+            <h3 class="text-lg font-bold mb-4" id="notesModalTitle"></h3>
+            <textarea id="notesInput" class="w-full p-2 border rounded-md" rows="3" placeholder="Tambahkan keterangan..."></textarea>
+            <div class="flex justify-end gap-3 mt-4">
+                <button onclick="closeNotesModal()" class="glossy-btn glossy-neutral px-4 py-2 rounded-lg font-semibold text-sm">Batal</button>
+                <button onclick="saveNotes()" class="glossy-btn glossy-success px-4 py-2 rounded-lg font-semibold text-sm">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ===================================================================================
+// 📚 DATA & STATE MANAGEMENT (SUDAH DIPERBARUI)
+// ===================================================================================
+const students = {
+    '1A': [
+        {id: 1, name: 'ALSHEIRAZ GHANI FAEYZA'}, {id: 2, name: 'ARSYILA SHANUM ADZKADINA'}, {id: 3, name: 'ATHAYA SYAMIL HARIZ'},
+        {id: 4, name: 'AZZAM HAFIDZ PUTRA'}, {id: 5, name: 'BILAL ASKARY WIBOWO'}, {id: 6, name: 'DELILLA SANIA SUBRATA'},
+        {id: 7, name: 'EMIR SYAH ZULLISTIAN'}, {id: 8, name: 'FELO FATIKHA RAHMAN'}, {id: 9, name: 'GIBRAN HAFIDZ'},
+        {id: 10, name: 'HANIAH BARKAH'}, {id: 11, name: 'KEANU ATHA MAUZA DZAKIANDRA'}, {id: 12, name: 'KHAWLA NEYLA RIZKI'},
+        {id: 13, name: 'MALIKA ZULAIKHA'}, {id: 14, name: 'MARTHA ANNISA OPYTIMURA'}, {id: 15, name: 'MUHAMMAD KIYAN ABYAZ'},
+        {id: 16, name: 'MUHAMMAD ZAYYAN QADDAFA LATUMAERISSA'}, {id: 17, name: 'NADINE ASSYIFA PUTRI'}, {id: 18, name: 'NURIIN SYIFA KAMILA ABRAR'},
+        {id: 19, name: 'RAYYAN MALIK ALFARIZI'}, {id: 20, name: 'RENATA ALESHA AFRIYANTO'}, {id: 21, name: 'RYUICHI ZHAFRAN RAVINDRA'},
+        {id: 22, name: 'SUDIRMAN KARIM UWAIS'}, {id: 23, name: 'SULTAN AFKAR ELRADHI'}, {id: 24, name: 'SYAFIQAH AIZA ADHARI'},
+        {id: 25, name: 'TASNIM SEKAR KINASIH'}
+    ],
+    '1B': [
+        {id: 1, name: 'ABIDZAR ATHALLAH EDDY'}, {id: 2, name: 'ADINDA NADEEN MIAMOR'}, {id: 3, name: 'AISHWA INDI RUMAISHA'},
+        {id: 4, name: 'AIZA PUTRI LAUNA'}, {id: 5, name: 'ALIKA ALMAHYRA SYARIFAH KAMAL'}, {id: 6, name: 'ARFAN KHABIB HAIDAR'},
+        {id: 7, name: 'ARSYA ATHOILLAH CORNELIS'}, {id: 8, name: 'BRISHA FAYYOLA BACHRI'}, {id: 9, name: 'CINDEKIA AZURA NAJMA'},
+        {id: 10, name: 'FAHIMAH ADELIA PUTRI'}, {id: 11, name: 'FATHAN RAYYAN ABDURRAHMAN'}, {id: 12, name: 'FATIMATUZZAHRA AGUNG PUTRI'},
+        {id: 13, name: 'FAUZAN FATIH ANDIAS'}, {id: 14, name: 'IZZUDDIN HANIYA AL QASSAM'}, {id: 15, name: 'KHANZA ABUDAN'},
+        {id: 16, name: 'MIKA ARSYILA GIANDRA'}, {id: 17, name: 'MOHAMMAD FARIS HAZMI'}, {id: 18, name: 'MOHAMMAD FATHAN ALGHAISAN'},
+        {id: 19, name: 'MUHAMMAD AL FASYAH'}, {id: 20, name: 'MUHAMMAD ATTHALLAH HILMI'}, {id: 21, name: 'MUHAMMAD FATHIAN RAFFASYA MUBAROK'},
+        {id: 22, name: 'MUHAMMAD RIZKI'}, {id: 23, name: 'SHAKEIL ATALLAH RAMADHAN'}, {id: 24, name: 'YENNISA SHANUM MAHESWARI'},
+        {id: 25, name: 'YUMNA ALI BAWAZIR'}
+    ],
+    '1C': [
+        {id: 1, name: 'ABDULLAH UMAR AL KHALIFI'}, {id: 2, name: 'AISYAH RAIHANAH ALKAFF'}, {id: 3, name: 'AISYAH ROYAN KHALIFAH'},
+        {id: 4, name: 'ALFARIZI PUTRA ILHAM'}, {id: 5, name: 'ALIFFA CANTIKA BR MELIALA'}, {id: 6, name: 'ANDARU RUMI AKSA'},
+        {id: 7, name: 'ARSYAD IBRAHIM SYAHREZA'}, {id: 8, name: 'ARSYLA MIQAELYA ZULFA'}, {id: 9, name: 'ATHAFARIZ MANNAF DZIKRA'},
+        {id: 10, name: 'AZRIL AL-HAFIZH RAMADHAN'}, {id: 11, name: 'FAHREENA KHAIRINDYA ARFIA'}, {id: 12, name: 'GALUH SAFWAN FIRDAUS'},
+        {id: 13, name: 'HANA ADZKIA ATQIA'}, {id: 14, name: 'ILMIRA KHANZA FARADIBA'}, {id: 15, name: 'MOUDY SYAM MARPAUNG'},
+        {id: 16, name: 'MUHAMMAD AFFAN SHIDDIQ'}, {id: 17, name: 'MUHAMMAD AKSHA RAFABUMI'}, {id: 18, name: 'MUHAMMAD KENZIO AL-SAFINO'},
+        {id: 19, name: 'NAUFAL EL ZAKWAN'}, {id: 20, name: 'RAIHAN RIZKI RAMADHAN'}, {id: 21, name: 'RALINKA SABINA IRWANTO'},
+        {id: 22, name: 'RASYID ARFIANSYAH YUSUF'}, {id: 23, name: 'RAYYAN DZAKKI PATURESI'}, {id: 24, name: 'SALMAN ALFARIZI RAHMAN'},
+        {id: 25, name: 'ZAHIRA MEDINA ALDES'}
+    ],
+    '2A': [
+        {id: 1, name: 'ADIFA YASNA HUMAIROH'}, {id: 2, name: 'ADREENA MARCHA'}, {id: 3, name: 'ADZKIYA NAILA MAULANA'},
+        {id: 4, name: 'ANISA FAKHRIYATUL FALIHAH'}, {id: 5, name: 'ANNASYA ZAHIDA MARYAM'}, {id: 6, name: 'ARESHA PUTRI HASAN'},
+        {id: 7, name: 'AZRIL FAUZAN RASHYA'}, {id: 8, name: 'AZZAHRA HUMAIRA AQILLA'}, {id: 9, name: 'DARLENE ALQAIREEN ARSYAD'},
+        {id: 10, name: 'DELISYA ADITYA AZ-ZAHRA'}, {id: 11, name: 'DZAIDAN ALFARIZQI SOCHDWITAMA'}, {id: 12, name: 'FATHAN ARZIKI HANIF'},
+        {id: 13, name: 'FATHI FAISAL BACHRAK'}, {id: 14, name: 'FAUZIAH SYIFA MAGNESIA'}, {id: 15, name: 'FILLIO GIBRAN AVERROES'},
+        {id: 16, name: 'IBTISAM KAZHIM RUSYDI BAISA'}, {id: 17, name: 'JOAN OMERA ALRESCHA'}, {id: 18, name: 'KAYLA ATHAYA PRASTYADI'},
+        {id: 19, name: 'MUHAMMAD AKASYAH WIJOYO'}, {id: 20, name: 'MUHAMMAD ALIF AL FATIH'}, {id: 21, name: 'MUHAMMAD RASYID HASAN'},
+        {id: 22, name: 'MUHAMMAD ULUL AZMI'}, {id: 23, name: 'MUHAMMAD ZAKY AL QARNI'}, {id: 24, name: 'QEANO XAVIER PRASETYO'},
+        {id: 25, name: 'RIFHAD DRUEANSYAH AL GHAZALI'}, {id: 26, name: 'SAHLA'}, {id: 27, name: 'SAHLA ZABIRA'},
+        {id: 28, name: 'SHANUM SADIYA MOMUAT'}, {id: 29, name: 'SHYALEINDRA ALMAHMIAT RICHIE'}, {id: 30, name: 'SULAIMAN HASAN MUTTAQIN'}
+    ],
+    '2B': [
+        {id: 1, name: 'ADREENA ELEANORE SUWANDI'}, {id: 2, name: 'ALESHA BIANCA PUTRI AR\'RACHMAN'}, {id: 3, name: 'AQILLA FIRDA NAFIA'},
+        {id: 4, name: 'ARVI ATTALAH RAFIF RAMADHAN'}, {id: 5, name: 'ATHARIZ ZAVIER ADHA'}, {id: 6, name: 'AZKAYRA SALSABILA WANGSI'},
+        {id: 7, name: 'ESHAN NAYAKA NALADIPHA'}, {id: 8, name: 'FARAH YUANITA PRASETYO'}, {id: 9, name: 'FARZAN AHSANTA YUSUF'},
+        {id: 10, name: 'FATIMAH MALIKA SABAI HUMAIRA'}, {id: 11, name: 'GHUMAISHA ALMAHYRA DEVGAN'}, {id: 12, name: 'IBRAHIM ALDEBARAN KARTADILAGA'},
+        {id: 13, name: 'JAZLI RIZKY HALIM'}, {id: 14, name: 'KANAYA ALESHA AFFANDI'}, {id: 15, name: 'KHALEEV RASYIID ADDITRI'},
+        {id: 16, name: 'MARYAM HANNANIA AZMIYA'}, {id: 17, name: 'MENTARI AYU NIRWASITA'}, {id: 18, name: 'MIKHAYLA FARZANA FERDIANSYAH'},
+        {id: 19, name: 'MUHAMMAD ARIZA FATHAN'}, {id: 20, name: 'MUHAMMAD ZIDAN SYAMIL NANDANA'}, {id: 21, name: 'NAILA SHABIRAH ALESHA'},
+        {id: 22, name: 'RACHEL MAHARANI AYU'}, {id: 23, name: 'RAFARDHAN LUTHFI HASAN'}, {id: 24, name: 'RANIA ARSYFA NUUR RAMADHANI'},
+        {id: 25, name: 'RAQILA ALVIN MUZAKKI'}, {id: 26, name: 'RASYA AZRIL FAIZAN'}, {id: 27, name: 'RAYYAN IBRAHIM'},
+        {id: 28, name: 'SALWA HALIMAH BASYAR'}, {id: 29, name: 'SHENDAUD SAFA SAMSARA'}, {id: 30, name: 'SHEZA ARSYILA FIRDIOZA'}
+    ],
+    '3A': [
+        {id: 1, name: 'ABHINAYA ARSYA SYAMIL'}, {id: 2, name: 'ABI IBRAHIM FIKRI'}, {id: 3, name: 'ADIB NUR HANAFI AL AYYUBI'},
+        {id: 4, name: 'ALESHA SHEZA SHABIRA SIREGAR'}, {id: 5, name: 'ANDINI HANANIA AZZAHRA'}, {id: 6, name: 'AURORA SHAQUEELA NARAYA'},
+        {id: 7, name: 'AZIZIA FAKHIRAH MEDIATAMA'}, {id: 8, name: 'AZZAM CHANDRA DANADYAKSA'}, {id: 9, name: 'BAGUS ADAM ALDEBARAN'},
+        {id: 10, name: 'CUT SHAFIRA KHAIRANA NILAM'}, {id: 11, name: 'FATHARANI ALYSSA KURNIAWAN'}, {id: 12, name: 'FATHIN AZRINA TSALISA'},
+        {id: 13, name: 'IBRAHIM AHSAN FIRDAUS'}, {id: 14, name: 'IRSYA HAUFANZA AHYAR'}, {id: 15, name: 'MOHAMMAD GHIBRAN ALFATIH'},
+        {id: 16, name: 'MUHAMMAD AZKA AL FATIH'}, {id: 17, name: 'MUHAMMAD KENZIE ALGHIFARI'}, {id: 18, name: 'NAUFAL RAHSYA ANDIRLY'},
+        {id: 19, name: 'NEFA AQEELA NURSYIFA'}, {id: 20, name: 'NUR ZEVA HAUFANHAZZA'}, {id: 21, name: 'RAISA SYAM MARPAUNG'},
+        {id: 22, name: 'RAQIBY ASAKINAH FAUZI'}, {id: 23, name: 'REVANIA MALEEHA GUNAWAN'}, {id: 24, name: 'RISMA ANNISA SYUHADA'},
+        {id: 25, name: 'SHAQUEENA SAMHA GHANIYA'}, {id: 26, name: 'SHAQUILLE ABDUL QODR'}, {id: 27, name: 'SITI KHADIJAH SABRIA'},
+        {id: 28, name: 'SYAFIQ ALFATIH'}, {id: 29, name: 'WAFA KAZHIM RUSYDI BAISA'}, {id: 30, name: 'ZHARIVA RAMADHANI'}
+    ],
+    '3B': [
+        {id: 1, name: 'ACHMAD ZIKRI MARLIYANTO'}, {id: 2, name: 'ADINDA YUMNA AZZAHRA'}, {id: 3, name: 'AFKAR AR RAYYAN'},
+        {id: 4, name: 'AISYAH SYAFA MUKHBITA'}, {id: 5, name: 'ALESHA SHABRINA INARA'}, {id: 6, name: 'ALYA RIZQIYA'},
+        {id: 7, name: 'ARKANA KEANU ALFATIH'}, {id: 8, name: 'ARSYILA'}, {id: 9, name: 'DELISHA SHAQUEENA ALI'},
+        {id: 10, name: 'DZIKRA LATIEF ALFATIH AGUSTO'}, {id: 11, name: 'FATIMAH AZ ZAHRA MADINAH'}, {id: 12, name: 'FEBRIANO AHMAD ARIA'},
+        {id: 13, name: 'HANA ADEFA PUTRI'}, {id: 14, name: 'HANIF ABBAD RAMDANI'}, {id: 15, name: 'HUMAIRA HANNI HAFIDZAH'},
+        {id: 16, name: 'KAYLA ATHAYA ZHAFIRA'}, {id: 17, name: 'LATISYA DINDA KIRANA'}, {id: 18, name: 'MUHAMMAD HAIKAL NURRAHMAN'},
+        {id: 19, name: 'MUHAMMAD WAFI'}, {id: 20, name: 'MUSA ABDURRAHMAN'}, {id: 21, name: 'NABILA MUMTAZAH AZARINE'},
+        {id: 22, name: 'NAFIISHA BALQIS AKBAR'}, {id: 23, name: 'NAYYARA HAFIZHA PUTRI'}, {id: 24, name: 'NINDITA SAKINAH PUTRI'},
+        {id: 25, name: 'OMAR NEYL RIZKI'}, {id: 26, name: 'RAJA ZAYN PULUNGAN'}, {id: 27, name: 'RAZQA ZAYN KHALIEF'},
+        {id: 28, name: 'REINO PUTRA INDITA'}, {id: 29, name: 'SYAFIQ NUR\'MANNAF'}
+    ],
+    '4A': [
+        {id: 1, name: 'AGIL ZAFRAN'}, {id: 2, name: 'AISHA KHANZA AZZAHRA SIREGAR'}, {id: 3, name: 'ANINDITA ZUHAYRA MICORAZON'},
+        {id: 4, name: 'ARKAN PUTERA BACHRI'}, {id: 5, name: 'ARSYA VIRENDRA DWIPRADIPTA'}, {id: 6, name: 'AUDREY NAVARA QALBI'},
+        {id: 7, name: 'BABY AQILLA MARCHA'}, {id: 8, name: 'DAFFI SAKHA ATALLAH'}, {id: 9, name: 'ELMA HANIFA SAHARA BASYAR'},
+        {id: 10, name: 'FARIZAN HUDZAIFA BRAMANTIYO'}, {id: 11, name: 'GHAZIYAH FAIRUZ PUTRI SURYA'}, {id: 12, name: 'JABEER ABDURRAHIM MUHAMMAD'},
+        {id: 13, name: 'KHALLISA YUMNA DIVYA'}, {id: 14, name: 'KHANSA HUMAIRA ALMAHIRA HARAHAP'}, {id: 15, name: 'MARTHA AATHIFAH OPYTIMURA'},
+        {id: 16, name: 'MIRZA AZKA PUTRA'}, {id: 17, name: 'MUHAMMAD RAFIF PUTERA FARDANI'}, {id: 18, name: 'MUHAMMAD RAIHAN HAFIZH DZIKRI'},
+        {id: 19, name: 'MUHAMMAD RASYAD THALIB SURYAHAMINATA'}, {id: 20, name: 'NARANTAKA'}, {id: 21, name: 'NARENDRA NAIL'},
+        {id: 22, name: 'QAISYA LHATIFAH ABIDAH PUTRI ARMEN'}, {id: 23, name: 'REIFAN ALVANO'}, {id: 24, name: 'SAAFIA AMIRA KHAIRUNNISA EDDY'},
+        {id: 25, name: 'SADIRA ALMIFTAH'}, {id: 26, name: 'SYIFA RUMAISHA'}, {id: 27, name: 'YAZID ALFATIH BASIR'},
+        {id: 28, name: 'ZYVARA AISYAH KAMILA'}
+    ],
+    '4B': [
+        {id: 1, name: 'ADZAN MIRZA ALI GUNAWAN HABIBIE'}, {id: 2, name: 'AKIFA NAILA PUTRI SLAMET'}, {id: 3, name: 'ALISSA ZAHIRAH ABRAR'},
+        {id: 4, name: 'ALWI ALAYDRUS'}, {id: 5, name: 'ANIQAH HAFSHAH'}, {id: 6, name: 'AZKA KHALILA NAPIS'},
+        {id: 7, name: 'CHELSEA ALICIA SIMANJUNTAK'}, {id: 8, name: 'FAIZ ARRASYID'}, {id: 9, name: 'GHAZI MUHAMMAD AL FATIH ALVAREZ'},
+        {id: 10, name: 'GWEN QIANNA ALESHA'}, {id: 11, name: 'HAFIZA KHAIRA NURHIDAYAH'}, {id: 12, name: 'INAYA PRAMESTHI BENBELA'},
+        {id: 13, name: 'IVANDER AXL ANGELO'}, {id: 14, name: 'KEEFE RAZZAQ ADDITRI'}, {id: 15, name: 'KIRANA AUFAA ANINDYAMUCHSI'},
+        {id: 16, name: 'MARYAM BRILIANAVEEN MURSIY'}, {id: 17, name: 'MUHAMMAD FAIRUZ AGUNG SAPUTRA'}, {id: 18, name: 'MUHAMMAD GHAZY SASTRAWIGUNA'},
+        {id: 19, name: 'MUHAMMAD HAMAM SYAHLAN'}, {id: 20, name: 'MUHAMMAD ZAHRAN ALFAREZQI'}, {id: 21, name: 'QUEENSHA RAIHANAH ALDIFA'},
+        {id: 22, name: 'RATU KAMILA WIBOWO'}, {id: 23, name: 'SAFIYYA TSABITA'}, {id: 24, name: 'SHAREEFA QAIREEN ANDIKA'},
+        {id: 25, name: 'SYABQI MUHAMMAD ALDRICH'}, {id: 26, name: 'VIOLA GANTARI SHANUM'}, {id: 27, name: 'ZHAFRAN EL RENZO SETIAWAN'},
+        {id: 28, name: 'ZIDNA ILMA KAMILA'}
+    ],
+    '5A': [
+        {id: 1, name: 'AFHAM RAFDAN FATHURRAHMAN'}, {id: 2, name: 'AMIRA KHAIRUNNISA RAMADHANI'}, {id: 3, name: 'ANDRA BAYANAKA WISANGGENI'},
+        {id: 4, name: 'AQEELA MAECA AZZAHRA'}, {id: 5, name: 'ARTANTI KAMILA PRAMUDITA'}, {id: 6, name: 'BUNGA CINTA KASIH DEF'},
+        {id: 7, name: 'DAFFANIA AZHIMA SETIAWIDI'}, {id: 8, name: 'DELISHA CIARA ALNADIN'}, {id: 9, name: 'GILBRAN HASAN HABIBIE ARJUNA CORNELIS'},
+        {id: 10, name: 'HAFIZ AHZA ZULKARNAIN'}, {id: 11, name: 'JAFAR IBNU HASAN'}, {id: 12, name: 'JIHAN TALITA PUTRI'},
+        {id: 13, name: 'JOVAN ORIESTA ALFREDA'}, {id: 14, name: 'KANISA NASYWA SAGALA'}, {id: 15, name: 'KAYSHA DAMAYANTI STUDIARTO'},
+        {id: 16, name: 'KEVAN DZIKRI ATHARIZZ CALIEF'}, {id: 17, name: 'KISA MARC ATALLAH'}, {id: 18, name: 'LANTANG ARSA FAQIH'},
+        {id: 19, name: 'LETISYA ZIVANA PUTRI'}, {id: 20, name: 'MUHAMMAD ALTAF ABYAZ'}, {id: 21, name: 'MUHAMMAD SAUQI HUSAIN'},
+        {id: 22, name: 'PUTRA BINTANG DIERGANTARA'}, {id: 23, name: 'RAHADIAN NURANDISYA HIDAYAT'}, {id: 24, name: 'RALIN NAGITA ADZKIA'},
+        {id: 25, name: 'RIZVI ATHARIZZ ALDRIC'}, {id: 26, name: 'SHAFA AZZAHRA FIRDIOZA'}, {id: 27, name: 'SUFIYYAH MARWAH ERSANDHI'},
+        {id: 28, name: 'UTHAILA AZSYAKIRA HERYANTO'}, {id: 29, name: 'UWAIS MUHAMMAD SYAMIL'}
+    ],
+    '5B': [
+        {id: 1, name: 'ABDURRAHMAN HANAN NAQIBA'}, {id: 2, name: 'ABIZAR IBRAHIM SYAFIQ'}, {id: 3, name: 'ABYZHAR RASHA SULTAN PRAJA'},
+        {id: 4, name: 'ALIQA AHZA BACHRI'}, {id: 5, name: 'ALTAMIS SIDIK'}, {id: 6, name: 'ALUNA MELODIA'},
+        {id: 7, name: 'BAHIRAH KIRANA AMIRA JANNAHTUL SOPIAN'}, {id: 8, name: 'AMIRA SHAKILA AZZAHRA'}, {id: 9, name: 'ATTALA PRABASWARA RAHMAN'},
+        {id: 10, name: 'ATTHAYA KENZIE SYLVANO'}, {id: 11, name: 'DZAKIYYAH ALIMAH'}, {id: 12, name: 'FATHIAH BINTANG MAHARANI'},
+        {id: 13, name: 'HAIDAR'}, {id: 14, name: 'IBRAHIM AL FATH RAYYAN'}, {id: 15, name: 'KHANSA ASSYIFA ZAHRA WIYONO'},
+        {id: 16, name: 'KIRANA DHIA SYARAFANA'}, {id: 17, name: 'MUHAMMAD ATHAR ABBASY'}, {id: 18, name: 'MUHAMMAD AZAM ROSYADI'},
+        {id: 19, name: 'MUHAMMAD FATIH AL GHIFARI'}, {id: 20, name: 'MUHAMMAD HAFIZH ABDURRAHMAN'}, {id: 21, name: 'MUHAMMAD NABIL EL RAFIF'},
+        {id: 22, name: 'NUFAIL AZRA ANHAR'}, {id: 23, name: 'QUEENA NAYARA SHAKIRA'}, {id: 24, name: 'RATU ALIYA NAFI\'AH'},
+        {id: 25, name: 'SARAH MALIKA RAIN BUTAR BUTAR'}, {id: 26, name: 'SHERYL ARSHITA KAMILA'}, {id: 27, name: 'SULTAN ALTHAF FANDIARDI'},
+        {id: 28, name: 'SYAKIRAH NUR\'AQILAH'}, {id: 29, name: 'TALITA SHAKILA ADHARI'}, {id: 30, name: 'TEGUH HANIF GUNAWAN'}
+    ],
+    '6A': [
+        {id: 1, name: 'ADZKIYA SYBILLA QALBI'}, {id: 2, name: 'AFKAR HABIBIE ARINANTO'}, {id: 3, name: 'AHMAD RAHMAT QOLBI RADJAB'},
+        {id: 4, name: 'DINDA CITRA ANGGRAINI'}, {id: 5, name: 'FAHIRA AGUSTINA BASRI'}, {id: 6, name: 'GHARIZA LASHIFA ALDES'},
+        {id: 7, name: 'HANA NABILAH MALIK'}, {id: 8, name: 'HILYA ABDULLAH SULI'}, {id: 9, name: 'MAULANA ALMER ARKANANTA'},
+        {id: 10, name: 'MUHAMMAD AZKAL FAEYZA'}, {id: 11, name: 'MUHAMMAD FADLAN RAMADHAN'}, {id: 12, name: 'MUHAMMAD RAZAN THALIB SURYAHAMINATA'},
+        {id: 13, name: 'MUHAMMAD REVAN ALVARONIZAM'}, {id: 14, name: 'NALINI SYIFA VIMALA'}, {id: 15, name: 'NAYLA PUTRI RIANDRA'},
+        {id: 16, name: 'RANIA UFAIRA SHAFWA'}, {id: 17, name: 'RANINDHITA HERDIANANTA RAMADHANI'}, {id: 18, name: 'RAYYANAZIA YASMIN NADHIFA'},
+        {id: 19, name: 'RIZKILAH ATTAYA ATTHORIQ'}, {id: 20, name: 'SHAKIRA MUTIA RAHMAH'}, {id: 21, name: 'SITI NAIMAYUBI SABRIA'},
+        {id: 22, name: 'SULTAN ROYAN KHALIFAH'}, {id: 23, name: 'SYAFIQ AZHAR WIBOWO'}, {id: 24, name: 'TEUKU FALEENZY ARQAM MOUZARINO'},
+        {id: 25, name: 'WARDA FARIDAH'}, {id: 26, name: 'YUMNA \'AINAL HADZIQAH'}, {id: 27, name: 'ZAHIRA FAUZIYYAH PUTRI'},
+        {id: 28, name: 'ZALFASYA NAUFAL KAMIL'}
+    ],
+    '6B': [
+        {id: 1, name: 'ADISTI PUTRI FATIMATUZZAHRA'}, {id: 2, name: 'AFIQAH KHAIRINA MICHEL'}, {id: 3, name: 'ALISHA ZAEDAH MUHSINA'},
+        {id: 4, name: 'AQILLA NAQUITA MAURI'}, {id: 5, name: 'ATHASYA NAILA SYARIF'}, {id: 6, name: 'AULIA NURIA ZAHRA'},
+        {id: 7, name: 'AZKA KYANO ALDRIKO'}, {id: 8, name: 'CINDY ALIKA FAUZIAH NINGRUM'}, {id: 9, name: 'EVAN OMAR NARENDRA'},
+        {id: 10, name: 'GILANG LANGIT RAMADHAN'}, {id: 11, name: 'HAUZAN BASIL ANWAR TSABIT'}, {id: 12, name: 'HILMY ABDULLAH SULI'},
+        {id: 13, name: 'KENZIE ALVARO IRWANTO'}, {id: 14, name: 'LAUDYA FAEYZA ALLMIRA'}, {id: 15, name: 'MALIKA ARUNDATI BAHRI'},
+        {id: 16, name: 'MUHAMMAD ADRIAN ZAFRAN'}, {id: 17, name: 'MUHAMMAD ARDHAN HIDAYAT'}, {id: 18, name: 'MUHAMMAD RASYIID AL FATIH'},
+        {id: 19, name: 'NABILA SYAFIA YUHANIZA'}, {id: 20, name: 'NISRINA NURUL AINI'}, {id: 21, name: 'OCEANO CHAVEZ KAMANDHAKA PUTRA'},
+        {id: 22, name: 'RENATA SAKURA KHAIRANI'}, {id: 23, name: 'SITI HALWA AMNI NAURAH'}, {id: 24, name: 'SUMAYYAH QATAR NAMERI BALWE\'EL'},
+        {id: 25, name: 'SYAFIQ ASSAD BASWEDAN'}, {id: 26, name: 'ZARA HASNA KAMILA'}, {id: 27, name: 'ZULFADLI JHONATAN FIRDAUS'}
+    ]
+};
+
+const teacherNames = {'1A':'Siti Aminah, S.Pd.','1B':'Budi Santoso, S.Pd.','1C':'Dewi Lestari, S.Ag.','2A':'Ahmad Fauzi, S.Pd.','2B':'Fitriani, S.Pd.','3A':'Joko Susilo, S.Pd.I.','3B':'Rina Wati, S.Ag.','4A':'Eko Prasetyo, S.Pd.','4B':'Lina Marlina, S.Pd.','5A':'Agus Setiawan, S.Pd.','5B':'Wati Handayani, S.Pd.','6A':'Supriyadi, S.Ag.','6B':'Indah Permatasari, S.Pd.'};
+let currentUser = null;
+let attendanceData = JSON.parse(localStorage.getItem('attendanceData_NurulHikmah')) || [];
+let currentModalData = { studentId: null, studentName: '', class: '', date: '' };
+let pieChartInstance = null;
+let lineChartInstance = null;
+
+// ===================================================================================
+// 🚀 INITIALIZATION & CORE APP LOGIC
+// ===================================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const savedUser = JSON.parse(sessionStorage.getItem('currentUser_NurulHikmah'));
+    if (savedUser) {
+        currentUser = savedUser;
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        initializeApp();
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+    const today = new Date().toISOString().split('T')[0];
+    ['attendanceDate', 'startDate', 'endDate'].forEach(id => document.getElementById(id).value = today);
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    ['monthlyPeriod', 'chartMonthSelector'].forEach(id => document.getElementById(id).value = currentMonth);
+    populateAllSelectors();
+    updateConnectionStatus();
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+});
+
+function initializeApp() {
+    updateCurrentUserDisplay();
+    if (currentUser.role === 'admin') {
+        document.getElementById('tab-admin').style.display = 'flex';
+        document.getElementById('kelasSelector').disabled = false;
+    } else {
+        document.getElementById('tab-admin').style.display = 'none';
+        document.getElementById('kelasSelector').value = currentUser.username;
+        document.getElementById('kelasSelector').disabled = true;
+    }
+    showTab('absensi');
+}
+
+function populateAllSelectors() {
+    let options = '<option value="">-- Pilih Kelas --</option>';
+    let filterOptions = '<option value="">Semua Kelas</option>';
+    Object.keys(students).forEach(className => {
+        options += `<option value="${className}">Kelas ${className}</option>`;
+        filterOptions += `<option value="${className}">Kelas ${className}</option>`;
+    });
+    ['kelasSelector', 'filterKelas', 'monthlyFilterKelas', 'chartKelasSelector'].forEach(id => {
+        document.getElementById(id).innerHTML = (id === 'kelasSelector') ? options : filterOptions;
+    });
+}
+
+// ===================================================================================
+// 🔐 AUTHENTICATION
+// ===================================================================================
+function handleLogin(event) {
+    event.preventDefault();
+    const username = document.getElementById('username').value.trim().toUpperCase();
+    const password = document.getElementById('password').value;
+    const loginError = document.getElementById('loginError');
+    loginError.classList.add('hidden');
+    loginError.parentElement.classList.remove('shake');
+    let userRole = null, isValid = false;
+    if (username === 'ADMIN' && password === 'admin') {
+        userRole = 'admin'; isValid = true;
+    } else if (students[username] && password === '1234567') {
+        userRole = 'guru'; isValid = true;
+    }
+    if (isValid) {
+        currentUser = { username: username, role: userRole };
+        sessionStorage.setItem('currentUser_NurulHikmah', JSON.stringify(currentUser));
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        initializeApp();
+    } else {
+        loginError.classList.remove('hidden');
+        loginError.parentElement.classList.add('shake');
+    }
+}
+
+function logout() {
+    currentUser = null;
+    sessionStorage.removeItem('currentUser_NurulHikmah');
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('mainApp').classList.add('hidden');
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+}
+
+// ===================================================================================
+// ⚙️ UI & HELPERS
+// ===================================================================================
+function updateDateTime() {
+    const now = new Date();
+    document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('currentTime').textContent = now.toLocaleTimeString('id-ID');
+}
+function updateCurrentUserDisplay() {
+    if (!currentUser) return;
+    const roleText = currentUser.role === 'admin' ? 'Administrator' : `Wali Kelas ${currentUser.username}`;
+    document.getElementById('currentUser').textContent = `Login sebagai: ${roleText}`;
+}
+function showTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+    document.getElementById(`content-${tabName}`).classList.remove('hidden');
+    const tabButtons = {absensi:'📝 Absensi Siswa',laporan:'📊 Laporan Harian',rekap:'📋 Rekap Bulanan',grafik:'📈 Grafik',admin:'⚙️ Admin'};
+    Object.entries(tabButtons).forEach(([key, text]) => {
+        const tab = document.getElementById(`tab-${key}`);
+        tab.innerHTML = text;
+        tab.classList.remove('active-tab-style');
+        tab.classList.add('inactive-tab-style');
+    });
+    const activeTab = document.getElementById(`tab-${tabName}`);
+    activeTab.classList.add('active-tab-style');
+    activeTab.classList.remove('inactive-tab-style');
+    if (tabName === 'absensi' && document.getElementById('kelasSelector').value) changeClass();
+    if (tabName === 'laporan') generateDailyReport();
+    if (tabName === 'rekap') generateMonthlyReport();
+    if (tabName === 'grafik') generateCharts();
+}
+document.head.insertAdjacentHTML('beforeend', `<style>.active-tab-style{color:white;background:linear-gradient(135deg, #667eea, #764ba2);box-shadow:0 8px 25px rgba(102,126,234,0.4)}.inactive-tab-style{color:#ffffffb3;}</style>`);
+
+function showToast(message, isSuccess = true) {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = `fixed top-5 right-5 text-white py-3 px-6 rounded-lg shadow-lg transform transition-transform duration-500 ease-in-out z-50 ${isSuccess ? 'bg-green-500' : 'bg-red-500'}`;
+    toast.classList.remove('translate-x-full');
+    setTimeout(() => toast.classList.add('translate-x-full'), 3000);
+}
+function updateConnectionStatus() {
+    const statusDiv = document.getElementById('connectionStatus');
+    if (navigator.onLine) {
+        statusDiv.innerHTML = '✅ Online';
+        statusDiv.className = 'text-xs px-2 py-1 rounded-full bg-green-500/20 text-green-300';
+    } else {
+        statusDiv.innerHTML = '❌ Offline';
+        statusDiv.className = 'text-xs px-2 py-1 rounded-full bg-red-500/20 text-red-300';
+    }
+}
+function openNotesModal(className, studentId, studentName) {
+    const selectedDate = document.getElementById('attendanceDate').value;
+    currentModalData = { studentId, studentName, class: className, date: selectedDate };
+    const record = attendanceData.find(a => a.date === selectedDate && a.class === className && a.studentId === studentId);
+    document.getElementById('notesModalTitle').innerText = `Keterangan untuk ${studentName}`;
+    document.getElementById('notesInput').value = record ? record.notes : '';
+    document.getElementById('notesModal').classList.remove('hidden');
+}
+function closeNotesModal() { document.getElementById('notesModal').classList.add('hidden'); }
+function saveNotes() {
+    const { studentId, studentName, class: className, date } = currentModalData;
+    const notes = document.getElementById('notesInput').value;
+    const recordIndex = attendanceData.findIndex(a => a.date === date && a.class === className && a.studentId === studentId);
+    if (recordIndex > -1) {
+        attendanceData[recordIndex].notes = notes;
+    } else {
+        attendanceData.push({ date, class: className, studentId, studentName, status: 'Izin', time: new Date().toTimeString().split(' ')[0], notes });
+    }
+    saveAttendanceData();
+    closeNotesModal();
+    showToast('Keterangan disimpan!');
+}
+
+// ===================================================================================
+// 📝 ABSENSI TAB
+// ===================================================================================
+function changeClass() {
+    const selectedClass = document.getElementById('kelasSelector').value;
+    const studentListDiv = document.getElementById('studentList');
+    const bulkSection = document.getElementById('bulkAttendanceSection');
+    if (!selectedClass) {
+        studentListDiv.innerHTML = `<p class="text-gray-500 text-center py-8">Pilih kelas untuk menampilkan daftar siswa</p>`;
+        bulkSection.classList.add('hidden');
+        updateLiveStats(); return;
+    }
+    bulkSection.classList.remove('hidden');
+    const classStudents = students[selectedClass];
+    const selectedDate = document.getElementById('attendanceDate').value;
+    const attendanceForDate = attendanceData.filter(att => att.date === selectedDate && att.class === selectedClass);
+    studentListDiv.innerHTML = classStudents.map(student => {
+        const record = attendanceForDate.find(att => att.studentId === student.id);
+        const status = record ? record.status : 'Belum Absen';
+        return `
+            <div class="bg-white p-4 rounded-xl flex items-center justify-between shadow-sm hover:shadow-md" id="student-${student.id}">
+                <div><span class="text-gray-500 font-bold mr-4">${student.id}.</span><span class="font-semibold">${student.name}</span></div>
+                <div class="flex items-center gap-1 md:gap-2">
+                    <button onclick="markAttendance('${selectedClass}', ${student.id}, '${student.name}', 'Hadir')" class="status-btn ${status==='Hadir'?'glossy-success':'glossy-neutral'} w-10 h-10 md:w-12 md:h-12 rounded-full font-bold text-sm">H</button>
+                    <button onclick="markAttendance('${selectedClass}', ${student.id}, '${student.name}', 'Sakit')" class="status-btn ${status==='Sakit'?'glossy-warning':'glossy-neutral'} w-10 h-10 md:w-12 md:h-12 rounded-full font-bold text-sm">S</button>
+                    <button onclick="markAttendance('${selectedClass}', ${student.id}, '${student.name}', 'Izin')" class="status-btn ${status==='Izin'?'glossy-info':'glossy-neutral'} w-10 h-10 md:w-12 md:h-12 rounded-full font-bold text-sm">I</button>
+                    <button onclick="markAttendance('${selectedClass}', ${student.id}, '${student.name}', 'Alpha')" class="status-btn ${status==='Alpha'?'glossy-danger':'glossy-neutral'} w-10 h-10 md:w-12 md:h-12 rounded-full font-bold text-sm">A</button>
+                    <button onclick="openNotesModal('${selectedClass}', ${student.id}, '${student.name}')" class="glossy-btn glossy-neutral px-3 py-2 rounded-lg text-sm">📝</button>
+                </div>
+            </div>`;
+    }).join('');
+    updateLiveStats();
+}
+function markAttendance(className, studentId, studentName, status) {
+    const selectedDate = document.getElementById('attendanceDate').value;
+    const recordIndex = attendanceData.findIndex(a => a.date === selectedDate && a.class === className && a.studentId === studentId);
+    if (recordIndex > -1) {
+        attendanceData[recordIndex].status === status ? attendanceData.splice(recordIndex, 1) : (attendanceData[recordIndex].status = status, attendanceData[recordIndex].time = new Date().toTimeString().split(' ')[0]);
+    } else {
+        attendanceData.push({ date: selectedDate, class: className, studentId, studentName, status, time: new Date().toTimeString().split(' ')[0], notes: '' });
+    }
+    saveAttendanceData();
+    changeClass();
+}
+function updateLiveStats() {
+    const selectedClass = document.getElementById('kelasSelector').value;
+    const selectedDate = document.getElementById('attendanceDate').value;
+    const counts = { Hadir: 0, Sakit: 0, Izin: 0, Alpha: 0 };
+    if (selectedClass) {
+        attendanceData.filter(a => a.date === selectedDate && a.class === selectedClass).forEach(a => { if(counts.hasOwnProperty(a.status)) counts[a.status]++; });
+    }
+    document.getElementById('hadirCount').textContent = counts.Hadir;
+    document.getElementById('sakitCount').textContent = counts.Sakit;
+    document.getElementById('izinCount').textContent = counts.Izin;
+    document.getElementById('alphaCount').textContent = counts.Alpha;
+}
+function markAllPresent() {
+    const selectedClass = document.getElementById('kelasSelector').value;
+    if (!selectedClass) return;
+    students[selectedClass].forEach(student => markAttendance(selectedClass, student.id, student.name, 'Hadir'));
+    showToast(`Semua siswa kelas ${selectedClass} ditandai Hadir.`);
+}
+function saveAllAttendance() { showToast('Absensi berhasil disimpan!'); }
+function saveAttendanceData() { localStorage.setItem('attendanceData_NurulHikmah', JSON.stringify(attendanceData)); }
+
+// ===================================================================================
+// 📊 LAPORAN & REKAP
+// ===================================================================================
+function filterReport() { generateDailyReport(); }
+function generateDailyReport() {
+    const filterKelas = document.getElementById('filterKelas').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    let data = attendanceData.filter(a => (!filterKelas || a.class === filterKelas) && a.date >= startDate && a.date <= endDate);
+    data.sort((a,b) => (a.date+a.class).localeCompare(b.date+b.class) || a.studentId - b.studentId);
+    const table = document.getElementById('reportTable');
+    if (data.length === 0) { table.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-gray-500">Tidak ada data</td></tr>`; return; }
+    const statusColors = {'Hadir':'bg-green-100 text-green-800','Sakit':'bg-yellow-100 text-yellow-800','Izin':'bg-blue-100 text-blue-800','Alpha':'bg-red-100 text-red-800'};
+    table.innerHTML = data.map((rec, i) => `
+        <tr class="border-b border-gray-200 hover:bg-gray-50">
+            <td class="py-3 px-4">${i+1}</td><td class="py-3 px-4">${new Date(rec.date).toLocaleDateString('id-ID')}</td>
+            <td class="py-3 px-4">${rec.studentName}</td><td class="py-3 px-4">${rec.class}</td>
+            <td class="py-3 px-4"><span class="px-2 py-1 rounded-full text-xs font-semibold ${statusColors[rec.status]||''}">${rec.status}</span></td>
+            <td class="py-3 px-4">${rec.time}</td><td class="py-3 px-4 text-sm text-gray-600">${rec.notes||'-'}</td>
+        </tr>`).join('');
+}
+function generateMonthlyReport() {
+    const filterKelas = document.getElementById('monthlyFilterKelas').value;
+    const period = document.getElementById('monthlyPeriod').value;
+    const table = document.getElementById('monthlyReportTable');
+    if (!period) { table.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-500">Pilih periode</td></tr>`; return; }
+    const data = attendanceData.filter(a => a.date.startsWith(period) && (!filterKelas || a.class === filterKelas));
+    const studentPool = filterKelas ? {[filterKelas]: students[filterKelas]} : students;
+    const workDays = [...new Set(data.map(a => a.date))].length;
+    let rekap = {};
+    Object.entries(studentPool).forEach(([className, studentList]) => {
+        if (!filterKelas || className === filterKelas) {
+            studentList.forEach(student => {
+                rekap[`${className}-${student.id}`] = { name: student.name, class: className, Hadir: 0, Sakit: 0, Izin: 0, Alpha: 0 };
+            });
+        }
+    });
+    data.forEach(a => {
+        let key = `${a.class}-${a.studentId}`;
+        if(rekap[key] && rekap[key].hasOwnProperty(a.status)) {
+            rekap[key][a.status]++;
+        }
+    });
+    const rekapArray = Object.values(rekap);
+    if(rekapArray.length === 0){ table.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-gray-500">Tidak ada data</td></tr>`; return;}
+    table.innerHTML = rekapArray.map((d, i) => {
+        const totalEfektif = workDays || (d.Hadir + d.Sakit + d.Izin + d.Alpha);
+        const percent = totalEfektif > 0 ? ((d.Hadir / totalEfektif) * 100).toFixed(1) : 0;
+        return `
+            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                <td class="py-3 px-4">${i+1}</td><td class="py-3 px-4 font-semibold">${d.name}</td>
+                <td class="py-3 px-4">${d.class}</td><td class="py-3 px-4 text-center">${d.Hadir}</td>
+                <td class="py-3 px-4 text-center">${d.Sakit}</td><td class="py-3 px-4 text-center">${d.Izin}</td>
+                <td class="py-3 px-4 text-center">${d.Alpha}</td>
+                <td class="py-3 px-4 font-bold ${percent>=80?'text-green-600':'text-red-600'}">${percent}%</td>
+            </tr>`;
+    }).join('');
+    document.getElementById('monthlyWorkDays').textContent = workDays;
+    const totalHadir = rekapArray.reduce((sum, item) => sum + item.Hadir, 0);
+    const totalPossible = workDays * rekapArray.length;
+    document.getElementById('monthlyAvgAttendance').textContent = `${totalPossible > 0 ? ((totalHadir / totalPossible) * 100).toFixed(1) : 0}%`;
+    document.getElementById('monthlyTotalStudents').textContent = rekapArray.length;
+    document.getElementById('monthlyTotalRecords').textContent = data.length;
+}
+
+// ===================================================================================
+// 📈 GRAFIK TAB
+// ===================================================================================
+function generateCharts() {
+    const filterKelas = document.getElementById('chartKelasSelector').value;
+    const period = document.getElementById('chartMonthSelector').value;
+    if (!period) return;
+    const data = attendanceData.filter(a => a.date.startsWith(period) && (!filterKelas || a.class === filterKelas));
+    const statusCounts = { Hadir: 0, Sakit: 0, Izin: 0, Alpha: 0 };
+    data.forEach(rec => { if (statusCounts.hasOwnProperty(rec.status)) statusCounts[rec.status]++; });
+    renderPieChart(Object.values(statusCounts));
+    const [year, month] = period.split('-');
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const dailyCounts = Array(daysInMonth).fill(0);
+    data.forEach(rec => { if (rec.status === 'Hadir') { const day = new Date(rec.date).getDate(); dailyCounts[day - 1]++; } });
+    renderLineChart(Array.from({ length: daysInMonth }, (_, i) => i + 1), dailyCounts);
+}
+function renderPieChart(data) {
+    const ctx = document.getElementById('statusPieChart').getContext('2d');
+    if (pieChartInstance) pieChartInstance.destroy();
+    pieChartInstance = new Chart(ctx, {type:'doughnut',data:{labels:['Hadir','Sakit','Izin','Alpha'],datasets:[{data,backgroundColor:['#10B981','#F59E0B','#3B82F6','#EF4444'],borderColor:'#F8F8F8',borderWidth:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}}}});
+}
+function renderLineChart(labels, data) {
+    const ctx = document.getElementById('dailyTrendChart').getContext('2d');
+    if (lineChartInstance) lineChartInstance.destroy();
+    lineChartInstance = new Chart(ctx, {type:'line',data:{labels,datasets:[{label:'Jumlah Hadir',data,fill:true,backgroundColor:'rgba(54,162,235,0.2)',borderColor:'rgba(54,162,235,1)',tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}}}});
+}
+
+// ===================================================================================
+// 📄 PDF EXPORT (VERSI PERBAIKAN)
+// ===================================================================================
+async function generatePdfFromElement(elementId, fileName) {
+    showToast('🚀 Mempersiapkan PDF...', true);
+    const { jsPDF } = window.jspdf;
+    const elementToExport = document.getElementById(elementId);
+    elementToExport.querySelectorAll('.print-header, .print-signature, .print-footer').forEach(el => el.classList.remove('hidden'));
+    try {
+        const canvas = await html2canvas(elementToExport, {
+            scale: 2, useCORS: true, logging: false,
+            onclone: (doc) => {
+                Array.from(doc.querySelectorAll('.no-print')).forEach(el => el.style.display = 'none');
+                Array.from(doc.querySelectorAll('.print-header, .print-signature, .print-footer')).forEach(el => el.style.display = 'block');
+            }
+        });
+        elementToExport.querySelectorAll('.print-header, .print-signature, .print-footer').forEach(el => el.classList.add('hidden'));
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = imgWidth / imgHeight;
+        const finalImgWidth = pdfWidth - 20;
+        const finalImgHeight = finalImgWidth / ratio;
+        let heightLeft = finalImgHeight;
+        let position = 10;
+        pdf.addImage(imgData, 'PNG', 10, position, finalImgWidth, finalImgHeight);
+        heightLeft -= (pdfHeight - 20);
+        while (heightLeft > 0) {
+            position = heightLeft - finalImgHeight + 10;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 10, position, finalImgWidth, finalImgHeight);
+            heightLeft -= (pdfHeight - 20);
+        }
+        pdf.save(fileName);
+        showToast('✅ PDF berhasil diekspor!', true);
+    } catch (error) {
+        console.error("Gagal membuat PDF:", error);
+        showToast('❌ Gagal mengekspor PDF.', false);
+        elementToExport.querySelectorAll('.print-header, .print-signature, .print-footer').forEach(el => el.classList.add('hidden'));
+    }
+}
+function exportReportToPDF() {
+    const today = new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('printDate').innerText = `Tanggal Cetak: ${today}`;
+    const selectedClass = document.getElementById('filterKelas').value;
+    document.getElementById('teacherNameSignatureDaily').innerText = `(${teacherNames[selectedClass] || '...........................'})`;
+    document.getElementById('dailyReportDate').innerText = `Bekasi, ${today}`;
+    generatePdfFromElement('content-laporan', `Laporan_Harian_${new Date().toISOString().split('T')[0]}.pdf`);
+}
+function exportMonthlyReportToPDF() {
+    const period = document.getElementById('monthlyPeriod').value;
+    const selectedClass = document.getElementById('monthlyFilterKelas').value;
+    const monthYear = new Date(`${period}-02`).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    document.getElementById('printMonthlyDate').innerText = `PERIODE: ${monthYear.toUpperCase()}`;
+    document.getElementById('monthlyReportDate').innerText = `Bekasi, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+    document.getElementById('teacherNameSignature').innerText = `(${teacherNames[selectedClass] || '...........................'})`;
+    generatePdfFromElement('content-rekap', `Rekap_Bulanan_${period}_${selectedClass || 'Semua'}.pdf`);
+}
+
+// ===================================================================================
+// ⚙️ ADMIN PANEL
+// ===================================================================================
+function clearAllData() {
+    if (prompt("Ini akan menghapus SEMUA data absensi. Ketik 'HAPUS' untuk konfirmasi.") === 'HAPUS') {
+        attendanceData = [];
+        saveAttendanceData();
+        showToast('Semua data absensi telah dihapus.');
+        location.reload();
+    } else {
+        showToast('Penghapusan data dibatalkan.', false);
+    }
+}
+</script>
+
+</body>
+</html>
