@@ -172,7 +172,7 @@
                     </div>
                     <div class="print-header hidden"><div class="print-title">LAPORAN ABSENSI SISWA</div><div class="print-title">SDIT NURUL HIKMAH</div><div class="print-date" id="printDate"></div></div>
                     <div class="grid md:grid-cols-3 gap-4 mb-6 no-print">
-                        <div><label class="block font-semibold mb-2">Filter Kelas</label><select id="filterKelas" onchange="filterReport()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></select></div>
+                        <div id="laporanKelasFilterDiv"><label class="block font-semibold mb-2">Filter Kelas</label><select id="filterKelas" onchange="filterReport()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></select></div>
                         <div><label class="block font-semibold mb-2">Tanggal Mulai</label><input type="date" id="startDate" onchange="filterReport()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></div>
                         <div><label class="block font-semibold mb-2">Tanggal Akhir</label><input type="date" id="endDate" onchange="filterReport()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></div>
                     </div>
@@ -189,7 +189,7 @@
                     </div>
                     <div class="print-header hidden"><div class="print-title">REKAP ABSENSI BULANAN</div><div class="print-title">SDIT NURUL HIKMAH</div><div class="print-date" id="printMonthlyDate"></div></div>
                     <div class="grid md:grid-cols-2 gap-4 mb-6 no-print">
-                        <div><label class="block font-semibold mb-2">Filter Kelas</label><select id="monthlyFilterKelas" onchange="generateMonthlyReport()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></select></div>
+                        <div id="rekapKelasFilterDiv"><label class="block font-semibold mb-2">Filter Kelas</label><select id="monthlyFilterKelas" onchange="generateMonthlyReport()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></select></div>
                         <div><label class="block font-semibold mb-2">Bulan & Tahun</label><input type="month" id="monthlyPeriod" onchange="generateMonthlyReport()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></div>
                     </div>
                     <div class="grid md:grid-cols-4 gap-4 mb-6 no-print">
@@ -207,7 +207,7 @@
                 <div class="rounded-2xl p-6 md:p-8 card-shadow" style="background-color: #F8F8F8;">
                     <h2 class="text-2xl font-bold mb-6">📈 Grafik Kehadiran</h2>
                     <div class="grid md:grid-cols-2 gap-4 mb-6 no-print">
-                        <div><label class="block font-semibold mb-2">Pilih Kelas</label><select id="chartKelasSelector" onchange="generateCharts()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></select></div>
+                        <div id="grafikKelasFilterDiv"><label class="block font-semibold mb-2">Pilih Kelas</label><select id="chartKelasSelector" onchange="generateCharts()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></select></div>
                         <div><label class="block font-semibold mb-2">Pilih Bulan</label><input type="month" id="chartMonthSelector" onchange="generateCharts()" class="w-full px-4 py-3 rounded-xl bg-white border border-gray-300"></div>
                     </div>
                     <div class="grid md:grid-cols-2 gap-8"><div class="min-h-[300px]"><h3 class="text-lg font-semibold text-center mb-2">Distribusi Status Absensi</h3><canvas id="statusPieChart"></canvas></div><div class="min-h-[300px]"><h3 class="text-lg font-semibold text-center mb-2">Tren Kehadiran Harian</h3><canvas id="dailyTrendChart"></canvas></div></div>
@@ -429,6 +429,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initializeApp() {
     updateCurrentUserDisplay();
+    // Sembunyikan/disable dropdown filter kelas di laporan/rekap/grafik jika bukan admin
+if (currentUser.role === 'admin') {
+    document.getElementById('laporanKelasFilterDiv').style.display = '';
+    document.getElementById('rekapKelasFilterDiv').style.display = '';
+    document.getElementById('grafikKelasFilterDiv').style.display = '';
+    document.getElementById('filterKelas').disabled = false;
+    document.getElementById('monthlyFilterKelas').disabled = false;
+    document.getElementById('chartKelasSelector').disabled = false;
+} else {
+    // Sembunyikan dropdown dan otomatis set value ke kelas user
+    document.getElementById('laporanKelasFilterDiv').style.display = 'none';
+    document.getElementById('rekapKelasFilterDiv').style.display = 'none';
+    document.getElementById('grafikKelasFilterDiv').style.display = 'none';
+    document.getElementById('filterKelas').value = currentUser.username;
+    document.getElementById('monthlyFilterKelas').value = currentUser.username;
+    document.getElementById('chartKelasSelector').value = currentUser.username;
+}
     if (currentUser.role === 'admin') {
         document.getElementById('tab-admin').style.display = 'flex';
         document.getElementById('kelasSelector').disabled = false;
@@ -798,4 +815,5 @@ function clearAllData() {
 </script>
 
 </body>
+
 </html>
