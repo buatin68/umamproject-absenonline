@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Absensi v4.5 - SDIT NURUL HIKMAH</title>
+    <!-- Menggunakan Tailwind CSS untuk styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Library untuk membuat PDF -->
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@latest/dist/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        /* Menggunakan font Poppins untuk tampilan yang lebih modern */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; }
+        /* Style untuk radio button custom */
+        .status-radio { display: none; }
+        .status-label {
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: 2px solid transparent;
+        }
+        /* Indikator status yang dipilih lebih jelas dengan border */
+        .status-radio:checked + .status-label {
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border-width: 2px;
+        }
+        .status-radio:checked + .bg-green-100 { border-color: #10B981; }
+        .status-radio:checked + .bg-yellow-100 { border-color: #F59E0B; }
+        .status-radio:checked + .bg-blue-100 { border-color: #3B82F6; }
+        .status-radio:checked + .bg-red-100 { border-color: #EF4444; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- === BAGIAN 1: LAYAR LOGIN === -->
+    <div id="loginScreen" class="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-700 p-4">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+            <div class="text-center mb-8">
+                <img src="images/logo sdit.png" alt="Logo Sekolah" class="w-24 h-24 mx-auto mb-4">
+                <h1 class="text-3xl font-bold text-gray-800 mt-4">Sistem Absensi Online</h1>
+                <p class="text-gray-500">SDIT NURUL HIKMAH</p>
+            </div>
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
+                    <input id="username" type="text" required class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                    <input id="password" type="password" required class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div id="loginError" class="hidden text-center text-red-500 font-medium">Username atau password salah!</div>
+                <button type="submit" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-transform transform hover:translate-y-[-2px]">
+                    Masuk
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- === BAGIAN 2: HALAMAN UTAMA APLIKASI (DASHBOARD) === -->
+    <div id="appContainer" class="hidden flex flex-col min-h-screen">
+        <!-- Header Aplikasi -->
+        <header class="bg-white shadow-md sticky top-0 z-10">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-20">
+                    <div class="flex items-center space-x-4">
+                        <img src=""images/logo sdit.png"" alt="Logo Sekolah" class="w-12 h-12">
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-800">SDIT NURUL HIKMAH</h1>
+                            <p class="text-sm text-gray-500">Tahun Pelajaran 2025-2026</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-6">
+                        <div class="text-right">
+                            <p id="currentDate" class="text-sm text-gray-500"></p>
+                            <p id="currentTime" class="font-semibold text-gray-800"></p>
+                        </div>
+                        <button onclick="logout()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium">Keluar</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Konten Utama -->
+        <main class="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow">
+            <!-- Info Pengguna dan Filter Kelas -->
+            <section class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div id="userAvatar" class="text-4xl"></div>
+                        <div>
+                            <p class="text-xl font-bold text-gray-800" id="userWelcome"></p>
+                            <p class="text-gray-500" id="userRole"></p>
+                        </div>
+                    </div>
+                    <div id="adminControls" class="hidden mt-4 sm:mt-0">
+                        <label for="kelasFilter" class="font-medium text-gray-700">Tampilkan Laporan Kelas:</label>
+                        <select id="kelasFilter" class="ml-2 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Menu Utama -->
+            <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <button onclick="showFormAbsensi()" class="p-6 bg-white rounded-xl shadow-lg text-left hover:shadow-2xl hover:scale-105 transition-all">
+                    <h3 class="text-xl font-bold text-green-600">📝 Input Absensi Harian</h3>
+                    <p class="text-gray-600 mt-2">Isi formulir kehadiran siswa untuk hari ini.</p>
+                </button>
+                <button onclick="showLaporanHarian()" class="p-6 bg-white rounded-xl shadow-lg text-left hover:shadow-2xl hover:scale-105 transition-all">
+                    <h3 class="text-xl font-bold text-indigo-600">📊 Laporan Harian</h3>
+                    <p class="text-gray-600 mt-2">Lihat rekapitulasi absensi untuk hari ini.</p>
+                </button>
+                <button onclick="showRekapAbsensi()" class="p-6 bg-white rounded-xl shadow-lg text-left hover:shadow-2xl hover:scale-105 transition-all">
+                    <h3 class="text-xl font-bold text-teal-600">📈 Rekap Absensi</h3>
+                    <p class="text-gray-600 mt-2">Lihat rekapitulasi total kehadiran per siswa.</p>
+                </button>
+            </section>
+
+            <!-- Area Konten Laporan -->
+            <section id="contentArea" class="bg-white rounded-xl shadow-lg p-8 min-h-[400px]">
+                <!-- Konten akan dimuat di sini oleh JavaScript -->
+            </section>
+        </main>
+
+        <!-- Footer Aplikasi -->
+        <footer class="text-center py-4 mt-8 border-t text-sm text-gray-500">
+            <p>&copy; 2025 umamproject absensi</p>
+        </footer>
+    </div>
+
+<script>
+    // === BAGIAN 3: JAVASCRIPT (LOGIKA APLIKASI) ===
+
+    // Inisialisasi library PDF
+    const { jsPDF } = window.jspdf;
+
+    // --- DATABASE (Data Pengguna & Siswa) ---
+    const schoolStaff = {
+        kepalaSekolah: "Lutfiah, M.Pd.I",
+        guruKelas: {
+            '1A': "Insyafiatul Fatimah, S.Sos.", '1B': "Nadiroh, S.Pd.I.", '1C': "Laela Sari Miskiah, S.Pd.I.",
+            '2A': "Dinny Nur Fajriyah, S.Pd.", '2B': "Nurhasanah, S.Pd.", '3A': "Hj. Imas Mastufiah, S.Pd.",
+            '3B': "Lulu Farhatul Ummah, M.Pd.", '4A': "Saefi Fadlun, S.Pd.", '4B': "May Sarrah, S.Pd.I.",
+            '5A': "Khapipah, S.P.", '5B': "Annisa Ryanti, S.Pd.", '6A': "Dahlia, S.Pd.", '6B': "Lala Komalasari, S.Si."
+        }
+    };
+
+    const users = {
+        'admin': { password: 'admin', role: 'admin', nama: 'Administrator' },
+        '1a': { password: '123456', role: 'guru', kelas: '1A', nama: schoolStaff.guruKelas['1A'] },
+        '1b': { password: '123456', role: 'guru', kelas: '1B', nama: schoolStaff.guruKelas['1B'] },
+        '1c': { password: '123456', role: 'guru', kelas: '1C', nama: schoolStaff.guruKelas['1C'] },
+        '2a': { password: '123456', role: 'guru', kelas: '2A', nama: schoolStaff.guruKelas['2A'] },
+        '2b': { password: '123456', role: 'guru', kelas: '2B', nama: schoolStaff.guruKelas['2B'] },
+        '3a': { password: '123456', role: 'guru', kelas: '3A', nama: schoolStaff.guruKelas['3A'] },
+        '3b': { password: '123456', role: 'guru', kelas: '3B', nama: schoolStaff.guruKelas['3B'] },
+        '4a': { password: '123456', role: 'guru', kelas: '4A', nama: schoolStaff.guruKelas['4A'] },
+        '4b': { password: '123456', role: 'guru', kelas: '4B', nama: schoolStaff.guruKelas['4B'] },
+        '5a': { password: '123456', role: 'guru', kelas: '5A', nama: schoolStaff.guruKelas['5A'] },
+        '5b': { password: '123456', role: 'guru', kelas: '5B', nama: schoolStaff.guruKelas['5B'] },
+        '6a': { password: '123456', role: 'guru', kelas: '6A', nama: schoolStaff.guruKelas['6A'] },
+        '6b': { password: '123456', role: 'guru', kelas: '6B', nama: schoolStaff.guruKelas['6B'] },
+    };
+
+    const daftarSiswaPerKelas = {
+        '1A': ["ALSHEIRAZ GHANI FAEYZA", "ARSYILA SHANUM ADZKADINA", "ATHAYA SYAMIL HARIZ", "AZZAM HAFIDZ PUTRA", "BILAL ASKARY WIBOWO", "DELILLA SANIA SUBRATA", "EMIR SYAH ZULLISTIAN", "FELO FATIKHA RAHMAN", "GIBRAN HAFIDZ", "HANIAH BARKAH", "KEANU ATHA MAUZA DZAKIANDRA", "KHAWLA NEYLA RIZKI", "MALIKA ZULAIKHA", "MARTHA ANNISA OPYTIMURA", "MUHAMMAD KIYAN ABYAZ", "MUHAMMAD ZAYYAN QADDAFA LATUMAERISSA", "NADINE ASSYIFA PUTRI", "NURIIN SYIFA KAMILA ABRAR", "RAYYAN MALIK ALFARIZI", "RENATA ALESHA AFRIYANTO", "RYUICHI ZHAFRAN RAVINDRA", "SUDIRMAN KARIM UWAIS", "SULTAN AFKAR ELRADHI", "SYAFIQAH AIZA ADHARI", "TASNIM SEKAR KINASIH"],
+        '1B': ["ABIDZAR ATHALLAH EDDY", "ADINDA NADEEN MIAMOR", "AISHWA INDI RUMAISHA", "AIZA PUTRI LAUNA", "ALIKA ALMAHYRA SYARIFAH KAMAL", "ARFAN KHABIB HAIDAR", "ARSYA ATHOILLAH CORNELIS", "BRISHA FAYYOLA BACHRI", "CINDEKIA AZURA NAJMA", "FAHIMAH ADELIA PUTRI", "FATHAN RAYYAN ABDURRAHMAN", "FATIMATUZZAHRA AGUNG PUTRI", "FAUZAN FATIH ANDIAS", "IZZUDDIN HANIYA AL QASSAM", "KHANZA ABUDAN", "MIKA ARSYILA GIANDRA", "MOHAMMAD FARIS HAZMI", "MOHAMMAD FATHAN ALGHAISAN", "MUHAMMAD AL FASYAH", "MUHAMMAD ATTHALLAH HILMI", "MUHAMMAD FATHIAN RAFFASYA MUBAROK", "MUHAMMAD RIZKI", "SHAKEIL ATALLAH RAMADHAN", "YENNISA SHANUM MAHESWARI", "YUMNA ALI BAWAZIR"],
+        '1C': ["ABDULLAH UMAR AL KHALIFI", "AISYAH RAIHANAH ALKAFF", "AISYAH ROYAN KHALIFAH", "ALFARIZI PUTRA ILHAM", "ALIFFA CANTIKA BR MELIALA", "ANDARU RUMI AKSA", "ARSYAD IBRAHIM SYAHREZA", "ARSYLA MIQAELYA ZULFA", "ATHAFARIZ MANNAF DZIKRA", "AZRIL AL-HAFIZH RAMADHAN", "FAHREENA KHAIRINDYA ARFIA", "GALUH SAFWAN FIRDAUS", "HANA ADZKIA ATQIA", "ILMIRA KHANZA FARADIBA", "MOUDY SYAM MARPAUNG", "MUHAMMAD AFFAN SHIDDIQ", "MUHAMMAD AKSHA RAFABUMI", "MUHAMMAD KENZIO AL-SAFINO", "NAUFAL EL ZAKWAN", "RAIHAN RIZKI RAMADHAN", "RALINKA SABINA IRWANTO", "RASYID ARFIANSYAH YUSUF", "RAYYAN DZAKKI PATURESI", "SALMAN ALFARIZI RAHMAN", "ZAHIRA MEDINA ALDES"],
+        '2A': ["ADIFA YASNA HUMAIROH", "ADREENA MARCHA", "ADZKIYA NAILA MAULANA", "ANISA FAKHRIYATUL FALIHAH", "ANNASYA ZAHIDA MARYAM", "ARESHA PUTRI HASAN", "AZRIL FAUZAN RASHYA", "AZZAHRA HUMAIRA AQILLA", "DARLENE ALQAIREEN ARSYAD", "DELISYA ADITYA AZ-ZAHRA", "DZAIDAN ALFARIZQI SOCHDWITAMA", "FATHAN ARZIKI HANIF", "FATHI FAISAL BACHRAK", "FAUZIAH SYIFA MAGNESIA", "FILLIO GIBRAN AVERROES", "IBTISAM KAZHIM RUSYDI BAISA", "JOAN OMERA ALRESCHA", "KAYLA ATHAYA PRASTYADI", "MUHAMMAD AKASYAH WIJOYO", "MUHAMMAD ALIF AL FATIH", "MUHAMMAD RASYID HASAN", "MUHAMMAD ULUL AZMI", "MUHAMMAD ZAKY AL QARNI", "QEANO XAVIER PRASETYO", "RIFHAD DRUEANSYAH AL GHAZALI", "SAHLA", "SAHLA ZABIRA", "SHANUM SADIYA MOMUAT", "SHYALEINDRA ALMAHMIAT RICHIE", "SULAIMAN HASAN MUTTAQIN"],
+        '2B': ["ADREENA ELEANORE SUWANDI", "ALESHA BIANCA PUTRI AR'RACHMAN", "AQILLA FIRDA NAFIA", "ARVI ATTALAH RAFIF RAMADHAN", "ATHARIZ ZAVIER ADHA", "AZKAYRA SALSABILA WANGSI", "ESHAN NAYAKA NALADIPHA", "FARAH YUANITA PRASETYO", "FARZAN AHSANTA YUSUF", "FATIMAH MALIKA SABAI HUMAIRA", "GHUMAISHA ALMAHYRA DEVGAN", "IBRAHIM ALDEBARAN KARTADILAGA", "JAZLI RIZKY HALIM", "KANAYA ALESHA AFFANDI", "KHALEEV RASYIID ADDITRI", "MARYAM HANNANIA AZMIYA", "MENTARI AYU NIRWASITA", "MIKHAYLA FARZANA FERDIANSYAH", "MUHAMMAD ARIZA FATHAN", "MUHAMMAD ZIDAN SYAMIL NANDANA", "NAILA SHABIRAH ALESHA", "RACHEL MAHARANI AYU", "RAFARDHAN LUTHFI HASAN", "RANIA ARSYFA NUUR RAMADHANI", "RAQILA ALVIN MUZAKKI", "RASYA AZRIL FAIZAN", "RAYYAN IBRAHIM", "SALWA HALIMAH BASYAR", "SHENDAUD SAFA SAMSARA", "SHEZA ARSYILA FIRDIOZA"],
+        '3A': ["ABHINAYA ARSYA SYAMIL", "ABI IBRAHIM FIKRI", "ADIB NUR HANAFI AL AYYUBI", "ALESHA SHEZA SHABIRA SIREGAR", "ANDINI HANANIA AZZAHRA", "AURORA SHAQUEELA NARAYA", "AZIZIA FAKHIRAH MEDIATAMA", "AZZAM CHANDRA DANADYAKSA", "BAGUS ADAM ALDEBARAN", "CUT SHAFIRA KHAIRANA NILAM", "FATHARANI ALYSSA KURNIAWAN", "FATHIN AZRINA TSALISA", "IBRAHIM AHSAN FIRDAUS", "IRSYA HAUFANZA AHYAR", "MOHAMMAD GHIBRAN ALFATIH", "MUHAMMAD AZKA AL FATIH", "MUHAMMAD KENZIE ALGHIFARI", "NAUFAL RAHSYA ANDIRLY", "NEFA AQEELA NURSYIFA", "NUR ZEVA HAUFANHAZZA", "RAISA SYAM MARPAUNG", "RAQIBY ASAKINAH FAUZI", "REVANIA MALEEHA GUNAWAN", "RISMA ANNISA SYUHADA", "SHAQUEENA SAMHA GHANIYA", "SHAQUILLE ABDUL QODR", "SITI KHADIJAH SABRIA", "SYAFIQ ALFATIH", "WAFA KAZHIM RUSYDI BAISA", "ZHARIVA RAMADHANI"],
+        '3B': ["ACHMAD ZIKRI MARLIYANTO", "ADINDA YUMNA AZZAHRA", "AFKAR AR RAYYAN", "AISYAH SYAFA MUKHBITA", "ALESHA SHABRINA INARA", "ALYA RIZQIYA", "ARKANA KEANU ALFATIH", "ARSYILA DELISHA SHAQUEENA ALI", "DZIKRA LATIEF ALFATIH AGUSTO", "FATIMAH AZ ZAHRA MADINAH", "FEBRIANO AHMAD ARIA", "HANA ADEFA PUTRI", "HANIF ABBAD RAMDANI", "HUMAIRA HANNI HAFIDZAH", "KAYLA ATHAYA ZHAFIRA", "LATISYA DINDA KIRANA", "MUHAMMAD HAIKAL NURRAHMAN", "MUHAMMAD WAFI", "MUSA ABDURRAHMAN", "NABILA MUMTAZAH AZARINE", "NAFIISHA BALQIS AKBAR", "NAYYARA HAFIZHA PUTRI", "NINDITA SAKINAH PUTRI", "OMAR NEYL RIZKI", "RAJA ZAYN PULUNGAN", "RAZQA ZAYN KHALIEF", "REINO PUTRA INDITA", "SYAFIQ NUR'MANNAF"],
+        '4A': ["AGIL ZAFRAN", "AISHA KHANZA AZZAHRA SIREGAR", "ANINDITA ZUHAYRA MICORAZON", "ARKAN PUTERA BACHRI", "ARSYA VIRENDRA DWIPRADIPTA", "AUDREY NAVARA QALBI", "BABY AQILLA MARCHA", "DAFFI SAKHA ATALLAH", "ELMA HANIFA SAHARA BASYAR", "FARIZAN HUDZAIFA BRAMANTIYO", "GHAZIYAH FAIRUZ PUTRI SURYA", "JABEER ABDURRAHIM MUHAMMAD", "KHALLISA YUMNA DIVYA", "KHANSA HUMAIRA ALMAHIRA HARAHAP", "MARTHA AATHIFAH OPYTIMURA", "MIRZA AZKA PUTRA", "MUHAMMAD RAFIF PUTERA FARDANI", "MUHAMMAD RAIHAN HAFIZH DZIKRI", "MUHAMMAD RASYAD THALIB SURYAHAMINATA", "NARANTAKA NARENDRA NAIL", "QAISYA LHATIFAH ABIDAH PUTRI ARMEN", "REIFAN ALVANO", "SAAFIA AMIRA KHAIRUNNISA EDDY", "SADIRA ALMIFTAH", "SYIFA RUMAISHA", "YAZID ALFATIH BASIR", "ZYVARA AISYAH KAMILA"],
+        '4B': ["ADZAN MIRZA ALI GUNAWAN HABIBIE", "AKIFA NAILA PUTRI SLAMET", "ALISSA ZAHIRAH ABRAR", "ALWI ALAYDRUS", "ANIQAH HAFSHAH", "AZKA KHALILA NAPIS", "CHELSEA ALICIA SIMANJUNTAK", "FAIZ ARRASYID", "GHAZI MUHAMMAD AL FATIH ALVAREZ", "GWEN QIANNA ALESHA", "HAFIZA KHAIRA NURHIDAYAH", "INAYA PRAMESTHI BENBELA", "IVANDER AXL ANGELO", "KEEFE RAZZAQ ADDITRI", "KIRANA AUFAA ANINDYAMUCHSI", "MARYAM BRILIANAVEEN MURSIY", "MUHAMMAD FAIRUZ AGUNG SAPUTRA", "MUHAMMAD GHAZY SASTRAWIGUNA", "MUHAMMAD HAMAM SYAHLAN", "MUHAMMAD ZAHRAN ALFAREZQI", "QUEENSHA RAIHANAH ALDIFA", "RATU KAMILA WIBOWO", "SAFIYYA TSABITA", "SHAREEFA QAIREEN ANDIKA", "SYABQI MUHAMMAD ALDRICH", "VIOLA GANTARI SHANUM", "ZHAFRAN EL RENZO SETIAWAN", "ZIDNA ILMA KAMILA"],
+        '5A': ["AFHAM RAFDAN FATHURRAHMAN", "AMIRA KHAIRUNNISA RAMADHANI", "ANDRA BAYANAKA WISANGGENI", "AQEELA MAECA AZZAHRA", "ARTANTI KAMILA PRAMUDITA", "BUNGA CINTA KASIH DEF", "DAFFANIA AZHIMA SETIAWIDI", "DELISHA CIARA ALNADIN", "GILBRAN HASAN HABIBIE ARJUNA CORNELIS", "HAFIZ AHZA ZULKARNAIN", "JAFAR IBNU HASAN", "JIHAN TALita PUTRI", "JOVAN ORIESTA ALFREDA", "KANISA NASYWA SAGALA", "KAYSHA DAMAYANTI STUDIARTO", "KEVAN DZIKRI ATHARIZZ CALIEF", "KISA MARC ATALLAH", "LANTANG ARSA FAQIH", "LETISYA ZIVANA PUTRI", "MUHAMMAD ALTAF ABYAZ", "MUHAMMAD SAUQI HUSAIN", "PUTRA BINTANG DIERGANTARA", "RAHADIAN NURANDISYA HIDAYAT", "RALIN NAGITA ADZKIA", "RIZVI ATHARIZZ ALDRIC", "SHAFA AZZAHRA FIRDIOZA", "SUFIYYAH MARWAH ERSANDHI", "UTHAILA AZSYAKIRA HERYANTO", "UWAIS MUHAMMAD SYAMIL"],
+        '5B': ["ABDURRAHMAN HANAN NAQIBA", "ABIZAR IBRAHIM SYAFIQ", "ABYZHAR RASHA SULTAN PRAJA", "ALIQA AHZA BACHRI", "ALTAMIS SIDIK", "ALUNA MELODIA BAHIRAH KIRANA", "AMIRA JANNAHTUL SOPIAN", "AMIRA SHAKILA AZZAHRA", "ATTALA PRABASWARA RAHMAN", "ATTHAYA KENZIE SYLVANO", "DZAKIYYAH ALIMAH", "FATHIAH BINTANG MAHARANI", "HAIDAR IBRAHIM AL FATH RAYYAN", "KHANSA ASSYIFA ZAHRA WIYONO", "KIRANA DHIA SYARAFANA", "MUHAMMAD ATHAR ABBASY", "MUHAMMAD AZAM ROSYADI", "MUHAMMAD FATIH AL GHIFARI", "MUHAMMAD HAFIZH ABDURRAHMAN", "MUHAMMAD NABIL EL RAFIF", "NUFAIL AZRA ANHAR", "QUEENA NAYARA SHAKIRA", "RATU ALIYA NAFI'AH", "SARAH MALIKA RAIN BUTAR BUTAR", "SHERYL ARSHITA KAMILA", "SULTAN ALTHAF FANDIARDI", "SYAKIRAH NUR'AQILAH", "TALITA SHAKILA ADHARI", "TEGUH HANIF GUNAWAN"],
+        '6A': ["ADZKIYA SYBILLA QALBI", "AFKAR HABIBIE ARINANTO", "AHMAD RAHMAT QOLBI RADJAB", "DINDA CITRA ANGGRAINI", "FAHIRA AGUSTINA BASRI", "GHARIZA LASHIFA ALDES", "HANA NABILAH MALIK", "HILYA ABDULLAH SULI", "MAULANA ALMER ARKANANTA", "MUHAMMAD AZKAL FAEYZA", "MUHAMMAD FADLAN RAMADHAN", "MUHAMMAD RAZAN THALIB SURYAHAMINATA", "MUHAMMAD REVAN ALVARONIZAM", "NALINI SYIFA VIMALA", "NAYLA PUTRI RIANDRA", "RANIA UFAIRA SHAFWA", "RANINDHITA HERDIANANTA RAMADHANI", "RAYYANAZIA YASMIN NADHIFA", "RIZKILAH ATTAYA ATTHORIQ", "SHAKIRA MUTIA RAHMAH", "SITI NAIMAYUBI SABRIA", "SULTAN ROYAN KHALIFAH", "SYAFIQ AZHAR WIBOWO", "TEUKU FALEENZY ARQAM MOUZARINO", "WARDA FARIDAH", "YUMNA 'AINAL HADZIQAH", "ZAHIRA FAUZIYYAH PUTRI", "ZALFASYA NAUFAL KAMIL"],
+        '6B': ["ADISTI PUTRI FATIMATUZZAHRA", "AFIQAH KHAIRINA MICHEL", "ALISHA ZAEDAH MUHSINA", "AQILLA NAQUITA MAURI", "ATHASYA NAILA SYARIF", "AULIA NURIA ZAHRA", "AZKA KYANO ALDRIKO", "CINDY ALIKA FAUZIAH NINGRUM", "EVAN OMAR NARENDRA", "GILANG LANGIT RAMADHAN", "HAUZAN BASIL ANWAR TSABIT", "HILMY ABDULLAH SULI", "KENZIE ALVARO IRWANTO", "LAUDYA FAEYZA ALLMIRA", "MALIKA ARUNDATI BAHRI", "MUHAMMAD ADRIAN ZAFRAN", "MUHAMMAD ARDHAN HIDAYAT", "MUHAMMAD RASYIID AL FATIH", "NABILA SYAFIA YUHANIZA", "NISRINA NURUL AINI", "OCEANO CHAVEZ KAMANDHAKA PUTRA", "RENATA SAKURA KHAIRANI", "SITI HALWA AMNI NAURAH", "SUMAYYAH QATAR NAMERI BALWE'EL", "SYAFIQ ASSAD BASWEDAN", "ZARA HASNA KAMILA", "ZULFADLI JHONATAN FIRDAUS"],
+    };
+    
+    let absensiData = [];
+    let currentUser = null;
+
+    // --- FUNGSI-FUNGSI UTAMA ---
+
+    // Fungsi untuk menampilkan Form Absensi Harian
+    function showFormAbsensi() {
+        const contentArea = document.getElementById('contentArea');
+        const today = new Date().toISOString().slice(0, 10);
+        const tanggalPilihan = document.getElementById('attendanceDate')?.value || today;
+        const kelasYangDipilih = (currentUser.role === 'admin') ? document.getElementById('kelasFilter').value : currentUser.kelas;
+        
+        const tanggalObj = new Date(tanggalPilihan + 'T00:00:00');
+        const dayOfWeek = tanggalObj.getDay();
+
+        let formHTML = `
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <div class="flex items-center gap-4">
+                     <h2 class="text-2xl font-bold text-gray-800 text-center sm:text-left">Form Absensi Harian</h2>
+                     <input type="date" id="attendanceDate" value="${tanggalPilihan}" onchange="showFormAbsensi()" class="border border-gray-300 rounded-lg px-3 py-2">
+                </div>
+                <div id="formActionButtons" class="flex space-x-2">
+                    <button type="button" onclick="document.getElementById('dailyAttendanceForm').requestSubmit()" class="px-5 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md">Simpan Absensi</button>
+                    <button type="button" onclick="tandaiHadirSemua()" class="px-5 py-2 text-sm bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md">Hadir Semua</button>
+                </div>
+            </div>`;
+        
+        if (dayOfWeek === 6 || dayOfWeek === 0) {
+            formHTML += `<div class="text-center p-8 bg-yellow-50 rounded-lg">
+                <h3 class="text-xl font-bold text-yellow-800">Hari Libur</h3>
+                <p class="text-yellow-700 mt-2">Anda tidak dapat menginput absensi pada hari Sabtu atau Minggu.</p>
+            </div>`;
+            contentArea.innerHTML = formHTML;
+            return;
+        }
+
+        const daftarNamaSiswa = daftarSiswaPerKelas[kelasYangDipilih] || [];
+
+        formHTML += `<form id="dailyAttendanceForm"><div class="space-y-4">`;
+
+        daftarNamaSiswa.sort().forEach((nama, index) => {
+            const safeId = nama.replace(/[^a-zA-Z0-9]/g, '');
+            const dataHariIni = absensiData.find(d => d.nama === nama && d.tanggal === tanggalPilihan);
+            const status = dataHariIni ? dataHariIni.status : 'Hadir';
+            const keterangan = dataHariIni ? (dataHariIni.keterangan || '') : '';
+
+            formHTML += `
+                <div class="p-4 border rounded-lg grid grid-cols-1 lg:grid-cols-12 gap-4 items-center hover:bg-gray-50">
+                    <div class="font-medium lg:col-span-4">${index + 1}. ${nama}</div>
+                    <div class="flex flex-wrap gap-2 items-center lg:col-span-5">
+                        <div>
+                            <input type="radio" id="hadir-${safeId}" name="status-${safeId}" value="Hadir" class="status-radio" ${status === 'Hadir' ? 'checked' : ''}>
+                            <label for="hadir-${safeId}" class="status-label bg-green-100 text-green-800">Hadir</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="sakit-${safeId}" name="status-${safeId}" value="Sakit" class="status-radio" ${status === 'Sakit' ? 'checked' : ''}>
+                            <label for="sakit-${safeId}" class="status-label bg-yellow-100 text-yellow-800">Sakit</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="izin-${safeId}" name="status-${safeId}" value="Izin" class="status-radio" ${status === 'Izin' ? 'checked' : ''}>
+                            <label for="izin-${safeId}" class="status-label bg-blue-100 text-blue-800">Izin</label>
+                        </div>
+                        <div>
+                            <input type="radio" id="alpha-${safeId}" name="status-${safeId}" value="Alpha" class="status-radio" ${status === 'Alpha' ? 'checked' : ''}>
+                            <label for="alpha-${safeId}" class="status-label bg-red-100 text-red-800">Alpha</label>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-3">
+                        <input type="text" id="keterangan-${safeId}" placeholder="Keterangan" value="${keterangan}" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>`;
+        });
+
+        formHTML += `
+                </div>
+                <div class="mt-8 text-right">
+                    <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md">Simpan Absensi</button>
+                </div>
+            </form>`;
+        
+        contentArea.innerHTML = formHTML;
+        document.getElementById('dailyAttendanceForm').addEventListener('submit', simpanAbsensi);
+    }
+    
+    function tandaiHadirSemua() {
+        const kelasYangDipilih = (currentUser.role === 'admin') ? document.getElementById('kelasFilter').value : currentUser.kelas;
+        const daftarNamaSiswa = daftarSiswaPerKelas[kelasYangDipilih] || [];
+        daftarNamaSiswa.forEach(nama => {
+            const safeId = nama.replace(/[^a-zA-Z0-9]/g, '');
+            const hadirRadio = document.getElementById(`hadir-${safeId}`);
+            if (hadirRadio) hadirRadio.checked = true;
+        });
+    }
+
+    function simpanAbsensi(event) {
+        event.preventDefault();
+        const tanggalPilihan = document.getElementById('attendanceDate').value;
+        const kelasYangDipilih = (currentUser.role === 'admin') ? document.getElementById('kelasFilter').value : currentUser.kelas;
+        const daftarNamaSiswa = daftarSiswaPerKelas[kelasYangDipilih] || [];
+
+        daftarNamaSiswa.forEach(nama => {
+            const safeId = nama.replace(/[^a-zA-Z0-9]/g, '');
+            const statusInput = document.querySelector(`input[name="status-${safeId}"]:checked`);
+            if (!statusInput) return;
+            
+            const status = statusInput.value;
+            const keterangan = document.getElementById(`keterangan-${safeId}`).value;
+            const existingIndex = absensiData.findIndex(d => d.nama === nama && d.tanggal === tanggalPilihan);
+
+            if (existingIndex > -1) {
+                absensiData[existingIndex].status = status;
+                absensiData[existingIndex].keterangan = keterangan;
+            } else {
+                absensiData.push({ tanggal: tanggalPilihan, nama, kelas: kelasYangDipilih, status, keterangan });
+            }
+        });
+
+        alert(`Absensi untuk kelas ${kelasYangDipilih} pada tanggal ${tanggalPilihan} berhasil disimpan!`);
+        showLaporanHarian(tanggalPilihan);
+    }
+
+    function showLaporanHarian(tanggal = null) {
+        const contentArea = document.getElementById('contentArea');
+        const tanggalLaporan = tanggal || new Date().toISOString().slice(0, 10);
+        
+        const kelasYangDipilih = (currentUser.role === 'admin') ? document.getElementById('kelasFilter').value : currentUser.kelas;
+        const dataHariIni = absensiData.filter(d => d.tanggal === tanggalLaporan && d.kelas === kelasYangDipilih);
+
+        let tableHTML = `
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Laporan Harian - Kelas ${kelasYangDipilih}</h2>
+                <button onclick="exportPdf('Laporan Harian Kelas ${kelasYangDipilih}', 'tabelLaporan')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium">Export PDF</button>
+            </div>
+            <div class="overflow-x-auto">
+                <table id="tabelLaporan" class="w-full text-left border-collapse">
+                    <thead>
+                        <tr>
+                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b">No.</th>
+                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b">Nama Siswa</th>
+                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b">Status</th>
+                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b">Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+        if (dataHariIni.length > 0) {
+            dataHariIni.sort((a, b) => a.nama.localeCompare(b.nama)).forEach((item, index) => {
+                tableHTML += `<tr class="hover:bg-gray-50">
+                    <td class="p-3 border-b">${index + 1}</td>
+                    <td class="p-3 border-b">${item.nama}</td>
+                    <td class="p-3 border-b">${item.status}</td>
+                    <td class="p-3 border-b">${item.keterangan || ''}</td>
+                </tr>`;
+            });
+        } else {
+            tableHTML += `<tr><td colspan="4" class="text-center p-6 text-gray-500">Tidak ada data absensi untuk hari ini.</td></tr>`;
+        }
+        
+        tableHTML += `</tbody></table></div>`;
+        contentArea.innerHTML = tableHTML;
+    }
+
+    function showRekapAbsensi() {
+        const contentArea = document.getElementById('contentArea');
+        
+        let filterHTML = `
+            <div class="mb-6 flex items-center space-x-4">
+                <label for="periodeFilter" class="font-medium">Pilih Periode Rekap:</label>
+                <select id="periodeFilter" class="border border-gray-300 rounded-lg px-3 py-2">
+                    <option value="bulan">Bulan Ini</option>
+                    <option value="semester1">Semester 1 (Juli - Des)</option>
+                    <option value="semester2">Semester 2 (Jan - Juni)</option>
+                </select>
+            </div>
+            <div id="rekapTableContainer"></div>
+        `;
+        contentArea.innerHTML = filterHTML;
+
+        document.getElementById('periodeFilter').addEventListener('change', generateRekapTable);
+        generateRekapTable();
+    }
+
+    function generateRekapTable() {
+        const container = document.getElementById('rekapTableContainer');
+        const periode = document.getElementById('periodeFilter').value;
+        const kelasYangDipilih = (currentUser.role === 'admin') ? document.getElementById('kelasFilter').value : currentUser.kelas;
+        
+        const now = new Date();
+        let startDate, endDate;
+        let totalHariAktifPeriode = 0;
+        let rekapTitleText = `Rekap Absensi - Kelas ${kelasYangDipilih}`;
+
+        if (periode === 'bulan') {
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            const namaBulan = now.toLocaleString('id-ID', { month: 'long' });
+            rekapTitleText = `Rekap Absensi Bulan ${namaBulan} - Kelas ${kelasYangDipilih}`;
+            
+            for (let d = new Date(startDate); d <= now && d <= endDate; d.setDate(d.getDate() + 1)) {
+                const dayOfWeek = d.getDay();
+                if (dayOfWeek > 0 && dayOfWeek < 6) {
+                    totalHariAktifPeriode++;
+                }
+            }
+        } else {
+            if (periode === 'semester1') {
+                const year = (now.getMonth() < 6) ? now.getFullYear() - 1 : now.getFullYear();
+                startDate = new Date(year, 6, 1); // Juli
+                endDate = new Date(year, 11, 31); // Desember
+                rekapTitleText = `Rekap Absensi Semester 1 - Kelas ${kelasYangDipilih}`;
+            } else if (periode === 'semester2') {
+                const year = (now.getMonth() < 6) ? now.getFullYear() : now.getFullYear() - 1;
+                const startYear = (now.getMonth() < 6) ? year : year + 1;
+                startDate = new Date(startYear, 0, 1); // Januari
+                endDate = new Date(startYear, 5, 30); // Juni
+                rekapTitleText = `Rekap Absensi Semester 2 - Kelas ${kelasYangDipilih}`;
+            }
+            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const dayOfWeek = d.getDay();
+                if (dayOfWeek > 0 && dayOfWeek < 6) {
+                    totalHariAktifPeriode++;
+                }
+            }
+        }
+
+        const dataPeriode = absensiData.filter(d => {
+            const tanggalAbsen = new Date(d.tanggal + 'T00:00:00');
+            return d.kelas === kelasYangDipilih && tanggalAbsen >= startDate && tanggalAbsen <= endDate;
+        });
+        
+        const rekap = {};
+        const daftarNamaSiswa = daftarSiswaPerKelas[kelasYangDipilih] || [];
+        daftarNamaSiswa.forEach(nama => {
+            rekap[nama] = { Hadir: 0, Sakit: 0, Izin: 0, Alpha: 0 };
+        });
+
+        dataPeriode.forEach(d => {
+            if (rekap[d.nama] && rekap[d.nama][d.status] !== undefined) {
+                rekap[d.nama][d.status]++;
+            }
+        });
+
+        let tableHTML = `
+             <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold text-gray-800">${rekapTitleText}</h2>
+                <button onclick="exportPdf('${rekapTitleText}', 'tabelLaporan')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium">Export PDF</button>
+            </div>`;
+        
+        if (totalHariAktifPeriode > 0) {
+            tableHTML += `<p class="mb-4 text-gray-700 font-medium">Total Hari Aktif Belajar: <span class="font-bold text-indigo-600">${totalHariAktifPeriode} hari</span></p>`;
+        }
+
+        tableHTML += `
+            <div class="overflow-x-auto">
+                <table id="tabelLaporan" class="w-full text-left border-collapse">
+                    <thead>
+                        <tr>
+                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b">No.</th>
+                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b">Nama Siswa</th>
+                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b text-center">Hadir</th>
+                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b text-center">Sakit</th>
+                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b text-center">Izin</th>
+                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b text-center">Alpha</th>
+                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b text-center">Persentase</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+        
+        const sortedNama = Object.keys(rekap).sort();
+        if (sortedNama.length > 0) {
+            sortedNama.forEach((namaSiswa, index) => {
+                const totalHadir = rekap[namaSiswa].Hadir;
+                const persentase = totalHariAktifPeriode > 0 ? ((totalHadir / totalHariAktifPeriode) * 100).toFixed(1) + '%' : '0.0%';
+                tableHTML += `<tr class="hover:bg-gray-50">
+                    <td class="p-3 border-b">${index + 1}</td>
+                    <td class="p-3 border-b">${namaSiswa}</td>
+                    <td class="p-3 border-b text-center">${totalHadir}</td>
+                    <td class="p-3 border-b text-center">${rekap[namaSiswa].Sakit}</td>
+                    <td class="p-3 border-b text-center">${rekap[namaSiswa].Izin}</td>
+                    <td class="p-3 border-b text-center">${rekap[namaSiswa].Alpha}</td>
+                    <td class="p-3 border-b text-center font-bold">${persentase}</td>
+                </tr>`;
+            });
+        } else {
+             tableHTML += `<tr><td colspan="7" class="text-center p-6 text-gray-500">Tidak ada data absensi untuk periode ini.</td></tr>`;
+        }
+
+        tableHTML += `</tbody></table></div>`;
+        container.innerHTML = tableHTML;
+    }
+
+    // --- FUNGSI-FUNGSI PENDUKUNG ---
+
+    function exportPdf(title, tableId) {
+        const doc = new jsPDF();
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(14);
+        doc.text(title, 14, 16);
+        doc.setFontSize(10);
+        doc.text("SDIT NURUL HIKMAH", 14, 22);
+        
+        doc.autoTable({
+            html: '#' + tableId,
+            startY: 28,
+            styles: { fontSize: 8, cellPadding: 1.5 },
+            headStyles: { fillColor: [22, 160, 133], textColor: 255, fontSize: 9 },
+            didDrawPage: function (data) {
+                // Footer
+                const pageCount = doc.internal.getNumberOfPages();
+                const pageWidth = doc.internal.pageSize.width;
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                doc.text(
+                    `© 2025 umamproject absensi - Halaman ${data.pageNumber} dari ${pageCount}`,
+                    pageWidth / 2,
+                    doc.internal.pageSize.height - 10,
+                    { align: 'center' }
+                );
+            }
+        });
+        
+        let finalY = doc.lastAutoTable.finalY || 50;
+        
+        const pageHeight = doc.internal.pageSize.height;
+        if (finalY > pageHeight - 70) {
+            doc.addPage();
+            finalY = 20;
+        }
+        
+        const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        const kelasYangDipilih = (currentUser.role === 'admin') ? document.getElementById('kelasFilter').value : currentUser.kelas;
+        const namaGuru = users[currentUser.username]?.nama || schoolStaff.guruKelas[kelasYangDipilih];
+        const namaKepsek = schoolStaff.kepalaSekolah;
+
+        doc.setFontSize(10);
+        doc.text(`Jakarta, ${today}`, 140, finalY + 20);
+        doc.text("Mengetahui,", 20, finalY + 35);
+        
+        doc.text("Kepala Sekolah", 20, finalY + 40);
+        doc.text("SDIT NURUL HIKMAH", 20, finalY + 45);
+        doc.text(`Guru Kelas ${kelasYangDipilih}`, 140, finalY + 40);
+        
+        doc.setFontSize(10);
+        doc.text(namaKepsek, 20, finalY + 75);
+        doc.text(namaGuru, 140, finalY + 75);
+        
+        doc.save(title.replace(/\s/g, '_') + '.pdf');
+    }
+    
+    function populateKelasFilter() {
+        const kelasSet = [...new Set(Object.values(users).filter(u => u.kelas).map(u => u.kelas))].sort();
+        const kelasFilter = document.getElementById('kelasFilter');
+        kelasFilter.innerHTML = '';
+        kelasSet.forEach(kelas => {
+            const option = document.createElement('option');
+            option.value = kelas;
+            option.textContent = kelas;
+            kelasFilter.appendChild(option);
+        });
+        
+        kelasFilter.addEventListener('change', () => {
+             const activeReportTitleEl = document.querySelector('#contentArea h2');
+             if (!activeReportTitleEl) return;
+             const activeReportTitle = activeReportTitleEl.textContent;
+             if (activeReportTitle.includes('Harian')) showLaporanHarian();
+             else if (activeReportTitle.includes('Rekap')) generateRekapTable();
+             else if (activeReportTitle.includes('Form Absensi')) showFormAbsensi();
+        });
+    }
+
+    function updateDateTime() {
+        const now = new Date();
+        document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        document.getElementById('currentTime').textContent = now.toLocaleTimeString('id-ID');
+    }
+
+    // --- LOGIKA LOGIN, LOGOUT, & INISIALISASI ---
+
+    function initApp() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('appContainer').classList.remove('hidden');
+        
+        document.getElementById('userWelcome').textContent = `Selamat datang, ${currentUser.nama}`;
+        
+        if (currentUser.role === 'admin') {
+            document.getElementById('userRole').textContent = 'Administrator';
+            document.getElementById('userAvatar').textContent = '👑';
+            document.getElementById('adminControls').classList.remove('hidden');
+            populateKelasFilter();
+        } else {
+            document.getElementById('userRole').textContent = `Guru Kelas ${currentUser.kelas}`;
+            document.getElementById('userAvatar').textContent = '👩‍🏫';
+            document.getElementById('adminControls').classList.add('hidden');
+        }
+        
+        showFormAbsensi();
+    }
+
+    function logout() {
+        sessionStorage.removeItem('currentUser');
+        location.reload();
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const username = document.getElementById('username').value.toLowerCase().trim();
+        const password = document.getElementById('password').value;
+        const user = users[username];
+
+        if (user && user.password === password) {
+            currentUser = { username, ...user };
+            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+            initApp();
+        } else {
+            document.getElementById('loginError').classList.remove('hidden');
+        }
+    });
+    
+    function generateInitialData() {
+        const today = new Date().toISOString().slice(0, 10);
+        for (const kelas in daftarSiswaPerKelas) {
+            daftarSiswaPerKelas[kelas].forEach(nama => {
+                const exists = absensiData.some(d => d.tanggal === today && d.nama === nama);
+                if (!exists) {
+                    absensiData.push({
+                        tanggal: today,
+                        nama: nama,
+                        kelas: kelas,
+                        status: "Hadir",
+                        keterangan: ""
+                    });
+                }
+            });
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        generateInitialData();
+        const savedUser = sessionStorage.getItem('currentUser');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            initApp();
+        }
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+    });
+
+</script>
+</body>
+</html>
