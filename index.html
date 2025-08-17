@@ -716,52 +716,80 @@
         doc.save(title.replace(/\s/g, '_') + '.pdf');
     }
 
-  function exportGrafikPdf() {
+function exportGrafikPdf() {
     const canvas = document.getElementById('attendanceChart');
     const title = document.getElementById('grafikTitle').textContent;
     const imgData = canvas.toDataURL('image/png');
 
     const doc = new jsPDF('landscape');
+    const namaSekolah = "SDIT Nurul Hikmah"; // ubah di sini kalau nama sekolah berubah
+
+    // Hitung Tahun Pelajaran otomatis
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // Januari = 1
+    let tahunPelajaran;
+    if (month >= 7) {
+        tahunPelajaran = `${year}-${year + 1}`;
+    } else {
+        tahunPelajaran = `${year - 1}-${year}`;
+    }
+
+    // Format tanggal (dd-mm-yyyy) untuk nama file
+    const todayDate = `${String(now.getDate()).padStart(2, '0')}-${String(month).padStart(2, '0')}-${year}`;
+
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(14);
     doc.text(title, 14, 16);
     doc.setFontSize(10);
-    doc.text("SDIT NURUL HIKMAH - Tahun Pelajaran 2025-2026", 14, 22);
+    doc.text(`${namaSekolah} - Tahun Pelajaran ${tahunPelajaran}`, 14, 22);
 
     // Hitung ukuran gambar agar proporsional
     const imgProps = doc.getImageProperties(imgData);
-    const pdfWidth = doc.internal.pageSize.getWidth() - 28; // dengan margin
+    const pdfWidth = doc.internal.pageSize.getWidth() - 28; 
     const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
     doc.addImage(imgData, 'PNG', 14, 30, pdfWidth, pdfHeight);
     
     // Titik dasar 5pt di bawah grafik
     const baseY = 30 + pdfHeight + 5;
-    
-    const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-    const kelasYangDipilih = (currentUser.role === 'admin') ? (document.getElementById('grafikKelasFilter')?.value || 'Semua Kelas') : currentUser.kelas;
-    const namaGuru = (kelasYangDipilih !== 'semua') ? (users[currentUser.username]?.nama || schoolStaff.guruKelas[kelasYangDipilih]) : users['admin'].nama;
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    const today = new Date().toLocaleDateString('id-ID', { 
+        day: 'numeric', month: 'long', year: 'numeric' 
+    });
+
+    const kelasYangDipilih = (currentUser.role === 'admin') 
+        ? (document.getElementById('grafikKelasFilter')?.value || 'Semua Kelas') 
+        : currentUser.kelas;
+
+    const namaGuru = (kelasYangDipilih !== 'semua') 
+        ? (users[currentUser.username]?.nama || schoolStaff.guruKelas[kelasYangDipilih]) 
+        : users['admin'].nama;
+
     const namaKepsek = schoolStaff.kepalaSekolah;
 
     doc.setFontSize(10);
-    // Mengetahui di kiri, Jakarta di kanan (sebaris)
+    // Mengetahui di kiri, Jakarta di kanan
     doc.text("Mengetahui,", 20, baseY);
-    doc.text(`Jakarta, ${today}`, 220, baseY);
+    doc.text(`Jakarta, ${today}`, pageWidth - 20, baseY, { align: "right" });
 
-    // Posisi tanda tangan di bawahnya
-    doc.text("Kepala Sekolah", 20, baseY + 15);
-    doc.text("SDIT NURUL HIKMAH", 20, baseY + 20);
+    // Tanda tangan
+    doc.text(`Kepala Sekolah ${namaSekolah}`, 20, baseY + 15);
 
     if (kelasYangDipilih !== 'semua') {
-        doc.text(`Guru Kelas ${kelasYangDipilih}`, 220, baseY + 15);
+        doc.text(`Guru Kelas ${kelasYangDipilih}`, pageWidth - 20, baseY + 15, { align: "right" });
     }
 
-    doc.text(namaKepsek, 20, baseY + 50);
+    doc.text(namaKepsek, 20, baseY + 25);
     if (kelasYangDipilih !== 'semua') {
-        doc.text(namaGuru, 220, baseY + 50);
+        doc.text(namaGuru, pageWidth - 20, baseY + 25, { align: "right" });
     }
 
-    doc.save(title.replace(/\s/g, '_') + '.pdf');
+    // Simpan file
+    const fileName = `${title.replace(/\s/g, '_')}_${tahunPelajaran}_${todayDate}.pdf`;
+    doc.save(fileName);
 }
+
 
     
     function populateKelasFilter() {
@@ -866,6 +894,7 @@
 </script>
 </body>
 </html>
+
 
 
 
