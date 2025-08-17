@@ -702,16 +702,16 @@
         const namaKepsek = schoolStaff.kepalaSekolah;
 
         doc.setFontSize(10);
-        doc.text(`Jakarta, ${today}`, 140, finalY + 20);
+        doc.text(`Jakarta, ${today}`, 140, finalY + 35);
         doc.text("Mengetahui,", 20, finalY + 35);
         
         doc.text("Kepala Sekolah", 20, finalY + 40);
         doc.text("SDIT NURUL HIKMAH", 20, finalY + 45);
-        doc.text(`Guru Kelas ${kelasYangDipilih}`, 140, finalY + 40);
+        doc.text(`Guru Kelas ${kelasYangDipilih}`, 140, finalY + 45);
         
         doc.setFontSize(10);
-        doc.text(namaKepsek, 20, finalY + 75);
-        doc.text(namaGuru, 140, finalY + 75);
+        doc.text(namaKepsek, 20, finalY + 50);
+        doc.text(namaGuru, 140, finalY + 50);
         
         doc.save(title.replace(/\s/g, '_') + '.pdf');
     }
@@ -866,5 +866,6 @@
 </script>
 </body>
 </html>
+
 
 
