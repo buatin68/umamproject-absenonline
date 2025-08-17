@@ -755,9 +755,9 @@
         doc.text(`Guru Kelas ${kelasYangDipilih}`, 220, baseY + 15);
     }
 
-    doc.text(namaKepsek, 20, baseY + 25);
+    doc.text(namaKepsek, 20, baseY + 50);
     if (kelasYangDipilih !== 'semua') {
-        doc.text(namaGuru, 220, baseY + 25);
+        doc.text(namaGuru, 220, baseY + 50);
     }
 
     doc.save(title.replace(/\s/g, '_') + '.pdf');
@@ -866,6 +866,7 @@
 </script>
 </body>
 </html>
+
 
 
 
