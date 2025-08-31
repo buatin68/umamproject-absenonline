@@ -723,10 +723,7 @@
     const namaKepsek = schoolStaff.kepalaSekolah;
 
     doc.setFontSize(10);
-    // Mengetahui di kiri, Jakarta di kanan (sebaris)
-    doc.text("Mengetahui,", 20, finalY + 20);
-    doc.text(`Jakarta, ${today}`, pageWidth - 20, finalY + 20, { align: "right" });
-
+ 
     // === Tanda Tangan ===
     doc.setFontSize(10);
 
@@ -972,6 +969,7 @@ function logout() {
 </script>
 </body>
 </html>
+
 
 
 
