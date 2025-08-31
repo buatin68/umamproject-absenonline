@@ -661,83 +661,88 @@
 
     // --- FUNGSI-FUNGSI PENDUKUNG ---
 
-    function exportPdf(title, tableId) {
+    function exportPdf(title, tableId, preview = false) {
     const doc = new jsPDF();
-    const namaSekolah = "SDIT Nurul Hikmah";
 
-    // Hitung Tahun Pelajaran otomatis
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1; // Januari = 1
-    let tahunPelajaran;
-    if (month >= 7) {
-        tahunPelajaran = `${year}-${year + 1}`;
-    } else {
-        tahunPelajaran = `${year - 1}-${year}`;
+    // --- ambil grafik ---
+    const imgData = document.getElementById("myChart")?.toDataURL("image/png", 1.0);
+    let baseY = 50;
+    if (imgData) {
+        const imgProps = doc.getImageProperties(imgData);
+        const pdfWidth = doc.internal.pageSize.getWidth() - 28; 
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        doc.addImage(imgData, 'PNG', 14, 30, pdfWidth, pdfHeight);
+        baseY = 30 + pdfHeight + 5;
     }
 
-    // Format tanggal (dd-mm-yyyy) untuk nama file
-    const todayDate = `${String(now.getDate()).padStart(2, '0')}-${String(month).padStart(2, '0')}-${year}`;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(14);
-    doc.text(title, 14, 16);
-    doc.setFontSize(10);
-    doc.text(`${namaSekolah} - Tahun Pelajaran ${tahunPelajaran}`, 14, 22);
-    
-    doc.autoTable({
-        html: '#' + tableId,
-        startY: 28,
-        styles: { fontSize: 8, cellPadding: 1.5 },
-        headStyles: { fillColor: [22, 160, 133], textColor: 255, fontSize: 9 },
-        didDrawPage: function (data) {
-            const pageCount = doc.internal.getNumberOfPages();
-            const pageWidth = doc.internal.pageSize.width;
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text(
-                `© ${year} umamproject absensi - Halaman ${data.pageNumber} dari ${pageCount}`,
-                pageWidth / 2,
-                doc.internal.pageSize.height - 10,
-                { align: 'center' }
-            );
-        }
-    });
-    
-    let finalY = doc.lastAutoTable.finalY || 50;
-    const pageHeight = doc.internal.pageSize.height;
+    // --- variabel dasar ---
     const pageWidth = doc.internal.pageSize.getWidth();
+    const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const todayDate = new Date().toISOString().split("T")[0];
 
-    if (finalY > pageHeight - 70) {
-        doc.addPage();
-        finalY = 20;
-    }
-    
-    const today = new Date().toLocaleDateString('id-ID', { 
-        day: 'numeric', month: 'long', year: 'numeric' 
-    });
     const kelasYangDipilih = (currentUser.role === 'admin') 
-        ? document.getElementById('kelasFilter').value 
+        ? (document.getElementById('grafikKelasFilter')?.value || 'Semua Kelas') 
         : currentUser.kelas;
-    const namaGuru = users[currentUser.username]?.nama || schoolStaff.guruKelas[kelasYangDipilih];
+
+    const namaGuru = (kelasYangDipilih !== 'semua') 
+        ? (currentUser.role === 'admin' 
+            ? schoolStaff.guruKelas[kelasYangDipilih] 
+            : currentUser.nama)
+        : "";
+
     const namaKepsek = schoolStaff.kepalaSekolah;
 
+    // --- tanda tangan ---
     doc.setFontSize(10);
-    // Mengetahui di kiri, Jakarta di kanan (sebaris)
-    doc.text("Mengetahui,", 20, finalY + 20);
-    doc.text(`Jakarta, ${today}`, pageWidth - 20, finalY + 20, { align: "right" });
+    // kiri
+    doc.text("Mengetahui,", 20, baseY);
+    doc.text(`Kepala Sekolah ${namaSekolah}`, 20, baseY + 5);
+    doc.text(namaKepsek, 20, baseY + 35);
 
-    // Tanda tangan
-    doc.text(`Kepala Sekolah ${namaSekolah}`, 20, finalY + 35);
-    doc.text(`Guru Kelas ${kelasYangDipilih}`, pageWidth - 20, finalY + 35, { align: "right" });
+    // kanan
+    doc.text(`Jakarta, ${today}`, pageWidth - 20, baseY, { align: "right" });
+    if (kelasYangDipilih !== 'semua') {
+        doc.text(`Guru Kelas ${kelasYangDipilih}`, pageWidth - 20, baseY + 5, { align: "right" });
+        doc.text(namaGuru, pageWidth - 20, baseY + 35, { align: "right" });
+    }
 
-    doc.text(namaKepsek, 20, finalY + 45);
-    doc.text(namaGuru, pageWidth - 20, finalY + 45, { align: "right" });
-    
-    // Simpan file
+    // --- nama file ---
     const fileName = `${title.replace(/\s/g, '_')}_${tahunPelajaran}_${todayDate}.pdf`;
-    doc.save(fileName);
+
+    if (preview) {
+        // 👉 preview di iframe
+        const pdfBlob = doc.output("blob");
+        const pdfBlobUrl = URL.createObjectURL(pdfBlob);
+
+        document.getElementById("pdfPreview").src = pdfBlobUrl;
+        document.getElementById("pdfContainer").style.display = "block";
+
+        // simpan blob & nama file untuk aksi download/print
+        window.generatedPdfBlob = pdfBlob;
+        window.generatedPdfFileName = fileName;
+    } else {
+        // 👉 langsung download
+        doc.save(fileName);
+    }
 }
+
+    function handlePdfAction(action) {
+    if (!window.generatedPdfBlob) return;
+
+    const blobUrl = URL.createObjectURL(window.generatedPdfBlob);
+
+    if (action === "download") {
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = window.generatedPdfFileName;
+        link.click();
+    } 
+    else if (action === "print") {
+        const win = window.open(blobUrl, "_blank");
+        win.addEventListener("load", () => win.print());
+    }
+}
+
 
 
 function exportGrafikPdf() {
@@ -968,6 +973,7 @@ function logout() {
 </script>
 </body>
 </html>
+
 
 
 
