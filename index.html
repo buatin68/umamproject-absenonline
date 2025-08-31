@@ -915,9 +915,56 @@ function exportGrafikPdf() {
         setInterval(updateDateTime, 1000);
     });
 
+// === LOGIN HANDLER ===
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim().toLowerCase();
+    const password = document.getElementById('password').value.trim();
+
+    if (users[username] && users[username].password === password) {
+        currentUser = users[username];
+        
+        // tampilkan info user
+        document.getElementById('userWelcome').textContent = currentUser.nama;
+        document.getElementById('userRole').textContent = currentUser.role === 'admin' 
+            ? "Administrator" 
+            : "Guru Kelas " + currentUser.kelas;
+        document.getElementById('userAvatar').textContent = currentUser.nama.charAt(0);
+
+        // kalau admin, isi dropdown kelas
+        if (currentUser.role === 'admin') {
+            const kelasFilter = document.getElementById('kelasFilter');
+            kelasFilter.innerHTML = "";
+            Object.keys(daftarSiswaPerKelas).forEach(kls => {
+                const opt = document.createElement("option");
+                opt.value = kls;
+                opt.textContent = kls;
+                kelasFilter.appendChild(opt);
+            });
+            document.getElementById('adminControls').classList.remove('hidden');
+        }
+
+        // tampilkan aplikasi
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('appContainer').classList.remove('hidden');
+
+    } else {
+        document.getElementById('loginError').classList.remove('hidden');
+    }
+});
+
+function logout() {
+    currentUser = null;
+    document.getElementById('appContainer').classList.add('hidden');
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('loginForm').reset();
+    document.getElementById('loginError').classList.add('hidden');
+}
+
 </script>
 </body>
 </html>
+
 
 
 
