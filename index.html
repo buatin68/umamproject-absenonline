@@ -799,12 +799,12 @@ doc.setFontSize(10);
 
 // Kiri
 doc.text("Mengetahui,", 20, baseY);
-doc.text(`Kepala Sekolah ${namaSekolah}`, 20, baseY + 3);
+doc.text(`Kepala Sekolah ${namaSekolah}`, 20, baseY + 5);
 
 // Kanan
 doc.text(`Jakarta, ${today}`, pageWidth - 20, baseY, { align: "right" });
 if (kelasYangDipilih !== 'semua') {
-    doc.text(`Guru Kelas ${kelasYangDipilih}`, pageWidth - 20, baseY + 3, { align: "right" });
+    doc.text(`Guru Kelas ${kelasYangDipilih}`, pageWidth - 20, baseY + 5, { align: "right" });
 }
 
 // beri jarak kosong ±25pt untuk tanda tangan
@@ -968,6 +968,7 @@ function logout() {
 </script>
 </body>
 </html>
+
 
 
 
