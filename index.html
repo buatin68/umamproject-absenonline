@@ -723,21 +723,16 @@
     const namaKepsek = schoolStaff.kepalaSekolah;
 
     doc.setFontSize(10);
- 
-    // === Tanda Tangan ===
-    doc.setFontSize(10);
-
-    // kiri (kepala sekolah)
+    // Mengetahui di kiri, Jakarta di kanan (sebaris)
     doc.text("Mengetahui,", 20, finalY + 20);
-    doc.text(`Kepala Sekolah ${namaSekolah}`, 20, finalY + 30);
-    doc.text(namaKepsek, 20, finalY + 60);
+    doc.text(`Jakarta, ${today}`, pageWidth - 20, finalY + 20, { align: "right" });
 
-    // kanan (guru kelas)
-    const pageWidth = doc.internal.pageSize.getWidth();
-    doc.text(`Jakarta, ${tanggalCetak}`, pageWidth - 80, finalY + 20);
-    doc.text(`Guru Kelas ${kelasYangDipilih}`, pageWidth - 80, finalY + 30);
-    doc.text(namaGuru, pageWidth - 80, finalY + 60);
+    // Tanda tangan
+    doc.text(`Kepala Sekolah ${namaSekolah}`, 20, finalY + 35);
+    doc.text(`Guru Kelas ${kelasYangDipilih}`, pageWidth - 20, finalY + 35, { align: "right" });
 
+    doc.text(namaKepsek, 20, finalY + 45);
+    doc.text(namaGuru, pageWidth - 20, finalY + 45, { align: "right" });
     
     // Simpan file
     const fileName = `${title.replace(/\s/g, '_')}_${tahunPelajaran}_${todayDate}.pdf`;
@@ -969,9 +964,6 @@ function logout() {
 </script>
 </body>
 </html>
-
-
-
 
 
 
