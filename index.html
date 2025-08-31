@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Absensi v5.4 - SDIT NURUL HIKMAH</title>
-    <!-- Menggunakan Tailwind CSS untuk styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Library untuk membuat PDF -->
     <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/jspdf-autotable@latest/dist/jspdf.plugin.autotable.min.js"></script>
-    <!-- Menambahkan library Chart.js untuk grafik -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Menggunakan font Poppins untuk tampilan yang lebih modern */
@@ -34,47 +31,48 @@
         .status-radio:checked + .bg-yellow-100 { border-color: #F59E0B; }
         .status-radio:checked + .bg-blue-100 { border-color: #3B82F6; }
         .status-radio:checked + .bg-red-100 { border-color: #EF4444; }
+        /* Style untuk Cetak Halaman: Sembunyikan tombol saat dicetak */
+        @media print {
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
 <body class="bg-gray-100">
 
-    <!-- === BAGIAN 1: LAYAR LOGIN === -->
     <div id="loginScreen" class="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-700 p-4">
-        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+        <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 transform transition-transform duration-500 hover:scale-[1.02]">
             <div class="text-center mb-8">
-                <img id="loginLogo" src="https://i.ibb.co/9g0s4s7/LOGO-SDIT-3-removebg-preview.png" alt="Logo Sekolah" class="w-24 h-24 mx-auto mb-4">
+                <img id="loginLogo" src="https://i.ibb.co/9g0s4s7/LOGO-SDIT-3-removebg-preview.png" alt="Logo Sekolah" class="w-24 h-24 mx-auto mb-4 animate-bounce-in">
                 <h1 class="text-3xl font-bold text-gray-800 mt-4">Sistem Absensi Online</h1>
                 <p class="text-gray-500">SDIT NURUL HIKMAH</p>
             </div>
             <form id="loginForm" class="space-y-6">
                 <div>
                     <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-                    <input id="username" type="text" required class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input id="username" type="text" required class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
                 </div>
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                    <input id="password" type="password" required class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input id="password" type="password" required class="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
                 </div>
                 <div id="loginError" class="hidden text-center text-red-500 font-medium">Username atau password salah!</div>
-                <button type="submit" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-transform transform hover:translate-y-[-2px]">
+                <button type="submit" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all transform hover:scale-105">
                     Masuk
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- === BAGIAN 2: HALAMAN UTAMA APLIKASI (DASHBOARD) === -->
     <div id="appContainer" class="hidden flex flex-col min-h-screen">
-        <!-- Header Aplikasi -->
-        <header class="bg-white shadow-md sticky top-0 z-10">
+        <header class="bg-white shadow-lg sticky top-0 z-10 border-b-4 border-indigo-600">
             <div class="container mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-20">
                     <div class="flex items-center space-x-4">
-                        <img id="headerLogo" src="https://i.ibb.co/9g0s4s7/LOGO-SDIT-3-removebg-preview.png" alt="Logo Sekolah" class="w-12 h-12">
+                        <img id="headerLogo" src="https://i.ibb.co/9g0s4s7/LOGO-SDIT-3-removebg-preview.png" alt="Logo Sekolah" class="w-12 h-12 rounded-full shadow-lg">
                         <div>
                             <div class="flex items-center gap-2">
                                 <h1 class="text-xl font-bold text-gray-800">SDIT NURUL HIKMAH</h1>
-                                <button onclick="document.getElementById('logoUploader').click()" class="text-gray-400 hover:text-indigo-600" title="Ganti Logo Sekolah">
+                                <button onclick="document.getElementById('logoUploader').click()" class="text-gray-400 hover:text-indigo-600 transition-colors" title="Ganti Logo Sekolah">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
                                 </button>
                                 <input type="file" id="logoUploader" class="hidden" accept="image/*">
@@ -87,21 +85,19 @@
                             <p id="currentDate" class="text-sm text-gray-500"></p>
                             <p id="currentTime" class="font-semibold text-gray-800"></p>
                         </div>
-                        <button onclick="logout()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium">Keluar</button>
+                        <button onclick="logout()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors">Keluar</button>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Konten Utama -->
         <main class="container mx-auto p-4 sm:p-6 lg:p-8 flex-grow">
-            <!-- Info Pengguna dan Filter Kelas -->
-            <section class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <section class="bg-white rounded-xl shadow-lg p-6 mb-8 transform transition-transform duration-300 hover:scale-[1.01]">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
                     <div class="flex items-center space-x-4">
                         <div id="userAvatarContainer" class="relative">
-                            <div id="userAvatar" class="text-4xl w-16 h-16 flex items-center justify-center rounded-full bg-gray-200 overflow-hidden"></div>
-                            <button onclick="document.getElementById('avatarUploader').click()" class="absolute bottom-0 right-0 bg-white rounded-full p-1 shadow-md hover:bg-gray-100" title="Ganti Foto Profil">
+                            <div id="userAvatar" class="text-4xl w-16 h-16 flex items-center justify-center rounded-full bg-indigo-500 text-white overflow-hidden shadow-lg border-2 border-white"></div>
+                            <button onclick="document.getElementById('avatarUploader').click()" class="absolute bottom-0 right-0 bg-white rounded-full p-1 shadow-md hover:bg-gray-100 transition-colors" title="Ganti Foto Profil">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>
                             </button>
                             <input type="file" id="avatarUploader" class="hidden" accept="image/*">
@@ -113,12 +109,11 @@
                     </div>
                     <div id="adminControls" class="hidden mt-4 sm:mt-0">
                         <label for="kelasFilter" class="font-medium text-gray-700">Tampilkan Laporan Kelas:</label>
-                        <select id="kelasFilter" class="ml-2 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+                        <select id="kelasFilter" class="ml-2 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"></select>
                     </div>
                 </div>
             </section>
 
-            <!-- Menu Utama -->
             <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <button onclick="showFormAbsensi()" class="p-6 bg-white rounded-xl shadow-lg text-left hover:shadow-2xl hover:scale-105 transition-all">
                     <h3 class="text-xl font-bold text-green-600">📝 Input Absensi Harian</h3>
@@ -138,13 +133,10 @@
                 </button>
             </section>
 
-            <!-- Area Konten Laporan -->
             <section id="contentArea" class="bg-white rounded-xl shadow-lg p-8 min-h-[400px]">
-                <!-- Konten akan dimuat di sini oleh JavaScript -->
-            </section>
+                </section>
         </main>
 
-        <!-- Footer Aplikasi -->
         <footer class="text-center py-4 mt-8 border-t text-sm text-gray-500">
             <p>&copy; 2025 umamproject absensi</p>
         </footer>
@@ -217,14 +209,18 @@
         const dayOfWeek = tanggalObj.getDay();
 
         let formHTML = `
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 no-print">
                 <div class="flex items-center gap-4">
                      <h2 class="text-2xl font-bold text-gray-800 text-center sm:text-left">Form Absensi Harian</h2>
                      <input type="date" id="attendanceDate" value="${tanggalPilihan}" onchange="showFormAbsensi()" class="border border-gray-300 rounded-lg px-3 py-2">
                 </div>
                 <div id="formActionButtons" class="flex space-x-2">
-                    <button type="button" onclick="document.getElementById('dailyAttendanceForm').requestSubmit()" class="px-5 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md">Simpan Absensi</button>
-                    <button type="button" onclick="tandaiHadirSemua()" class="px-5 py-2 text-sm bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md">Hadir Semua</button>
+                    <button type="button" onclick="document.getElementById('dailyAttendanceForm').requestSubmit()" class="px-5 py-2 text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-colors">Simpan Absensi</button>
+                    <button type="button" onclick="tandaiHadirSemua()" class="px-5 py-2 text-sm bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg shadow-md transition-colors">Hadir Semua</button>
+                    <button onclick="window.print()" class="px-5 py-2 text-sm bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg shadow-md transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4.5A1.5 1.5 0 016.5 3h6A1.5 1.5 0 0114 4.5V5h1.5A1.5 1.5 0 0117 6.5v4A1.5 1.5 0 0115.5 12H14v2.5A1.5 1.5 0 0112.5 16h-5A1.5 1.5 0 016 14.5V12H4.5A1.5 1.5 0 013 10.5v-4A1.5 1.5 0 014.5 5H6v-.5zM7.5 14h5v-2H7.5v2zM5.5 10a.5.5 0 100-1 .5.5 0 000 1zM14 6.5a.5.5 0 10-1 0 .5.5 0 001 0z" clip-rule="evenodd" /></svg>
+                        Cetak Halaman
+                    </button>
                 </div>
             </div>`;
         
@@ -248,7 +244,7 @@
             const keterangan = dataHariIni ? (dataHariIni.keterangan || '') : '';
 
             formHTML += `
-                <div class="p-4 border rounded-lg grid grid-cols-1 lg:grid-cols-12 gap-4 items-center hover:bg-gray-50">
+                <div class="p-4 border rounded-lg grid grid-cols-1 lg:grid-cols-12 gap-4 items-center hover:bg-gray-50 transition-colors">
                     <div class="font-medium lg:col-span-4">${index + 1}. ${nama}</div>
                     <div class="flex flex-wrap gap-2 items-center lg:col-span-5">
                         <div>
@@ -269,15 +265,15 @@
                         </div>
                     </div>
                     <div class="lg:col-span-3">
-                        <input type="text" id="keterangan-${safeId}" placeholder="Keterangan" value="${keterangan}" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <input type="text" id="keterangan-${safeId}" placeholder="Keterangan" value="${keterangan}" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
                     </div>
                 </div>`;
         });
 
         formHTML += `
                 </div>
-                <div class="mt-8 text-right">
-                    <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md">Simpan Absensi</button>
+                <div class="mt-8 text-right no-print">
+                    <button type="submit" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-colors">Simpan Absensi</button>
                 </div>
             </form>`;
         
@@ -330,29 +326,35 @@
         const dataHariIni = absensiData.filter(d => d.tanggal === tanggalLaporan && d.kelas === kelasYangDipilih);
 
         let tableHTML = `
-            <div class="flex justify-between items-center mb-6">
+            <div class="flex justify-between items-center mb-6 no-print">
                 <h2 class="text-2xl font-bold text-gray-800">Laporan Harian - Kelas ${kelasYangDipilih}</h2>
-                <button onclick="exportPdf('Laporan Harian Kelas ${kelasYangDipilih}', 'tabelLaporan')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium">Export PDF</button>
+                <div class="flex space-x-2">
+                    <button onclick="exportPdf('Laporan Harian Kelas ${kelasYangDipilih}', 'tabelLaporan')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">Export PDF</button>
+                    <button onclick="window.print()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4.5A1.5 1.5 0 016.5 3h6A1.5 1.5 0 0114 4.5V5h1.5A1.5 1.5 0 0117 6.5v4A1.5 1.5 0 0115.5 12H14v2.5A1.5 1.5 0 0112.5 16h-5A1.5 1.5 0 016 14.5V12H4.5A1.5 1.5 0 013 10.5v-4A1.5 1.5 0 014.5 5H6v-.5zM7.5 14h5v-2H7.5v2zM5.5 10a.5.5 0 100-1 .5.5 0 000 1zM14 6.5a.5.5 0 10-1 0 .5.5 0 001 0z" clip-rule="evenodd" /></svg>
+                        Cetak Halaman
+                    </button>
+                </div>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto rounded-lg shadow-md">
                 <table id="tabelLaporan" class="w-full text-left border-collapse">
                     <thead>
-                        <tr>
-                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b">No.</th>
-                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b">Nama Siswa</th>
-                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b">Status</th>
-                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b">Keterangan</th>
+                        <tr class="bg-indigo-600 text-white">
+                            <th class="p-3 font-semibold uppercase">No.</th>
+                            <th class="p-3 font-semibold uppercase">Nama Siswa</th>
+                            <th class="p-3 font-semibold uppercase">Status</th>
+                            <th class="p-3 font-semibold uppercase">Keterangan</th>
                         </tr>
                     </thead>
                     <tbody>`;
 
         if (dataHariIni.length > 0) {
             dataHariIni.sort((a, b) => a.nama.localeCompare(b.nama)).forEach((item, index) => {
-                tableHTML += `<tr class="hover:bg-gray-50">
-                    <td class="p-3 border-b">${index + 1}</td>
-                    <td class="p-3 border-b">${item.nama}</td>
-                    <td class="p-3 border-b">${item.status}</td>
-                    <td class="p-3 border-b">${item.keterangan || ''}</td>
+                tableHTML += `<tr class="hover:bg-gray-50 transition-colors border-b last:border-b-0">
+                    <td class="p-3">${index + 1}</td>
+                    <td class="p-3">${item.nama}</td>
+                    <td class="p-3">${item.status}</td>
+                    <td class="p-3">${item.keterangan || ''}</td>
                 </tr>`;
             });
         } else {
@@ -367,13 +369,22 @@
         const contentArea = document.getElementById('contentArea');
         
         let filterHTML = `
-            <div class="mb-6 flex items-center space-x-4">
-                <label for="periodeFilter" class="font-medium">Pilih Periode Rekap:</label>
-                <select id="periodeFilter" class="border border-gray-300 rounded-lg px-3 py-2">
-                    <option value="bulan">Bulan Ini</option>
-                    <option value="semester1">Semester 1 (Juli - Des)</option>
-                    <option value="semester2">Semester 2 (Jan - Juni)</option>
-                </select>
+            <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 no-print">
+                <div class="flex items-center space-x-2">
+                    <label for="periodeFilter" class="font-medium">Pilih Periode Rekap:</label>
+                    <select id="periodeFilter" class="border border-gray-300 rounded-lg px-3 py-2">
+                        <option value="bulan">Bulan Ini</option>
+                        <option value="semester1">Semester 1 (Juli - Des)</option>
+                        <option value="semester2">Semester 2 (Jan - Juni)</option>
+                    </select>
+                </div>
+                <div class="ml-auto flex space-x-2">
+                    <button onclick="exportPdf(document.getElementById('rekapTitle').textContent, 'tabelLaporan')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">Export PDF</button>
+                    <button onclick="window.print()" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4.5A1.5 1.5 0 016.5 3h6A1.5 1.5 0 0114 4.5V5h1.5A1.5 1.5 0 0117 6.5v4A1.5 1.5 0 0115.5 12H14v2.5A1.5 1.5 0 0112.5 16h-5A1.5 1.5 0 016 14.5V12H4.5A1.5 1.5 0 013 10.5v-4A1.5 1.5 0 014.5 5H6v-.5zM7.5 14h5v-2H7.5v2zM5.5 10a.5.5 0 100-1 .5.5 0 000 1zM14 6.5a.5.5 0 10-1 0 .5.5 0 001 0z" clip-rule="evenodd" /></svg>
+                        Cetak Halaman
+                    </button>
+                </div>
             </div>
             <div id="rekapTableContainer"></div>
         `;
@@ -420,7 +431,7 @@
             }
             for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
                 const dayOfWeek = d.getDay();
-                if (dayOfWeek > 0 && dayOfWeek < 6) {
+                if (dayOfWeek > 0 && d.getDay() < 6) {
                     totalHariAktifPeriode++;
                 }
             }
@@ -445,482 +456,8 @@
 
         let tableHTML = `
              <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold text-gray-800">${rekapTitleText}</h2>
-                <button onclick="exportPdf('${rekapTitleText}', 'tabelLaporan')" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium">Export PDF</button>
+                <h2 id="rekapTitle" class="text-2xl font-bold text-gray-800">${rekapTitleText}</h2>
             </div>`;
         
         if (totalHariAktifPeriode > 0) {
-            tableHTML += `<p class="mb-4 text-gray-700 font-medium">Total Hari Aktif Belajar: <span class="font-bold text-indigo-600">${totalHariAktifPeriode} hari</span></p>`;
-        }
-
-        tableHTML += `
-            <div class="overflow-x-auto">
-                <table id="tabelLaporan" class="w-full text-left border-collapse">
-                    <thead>
-                        <tr>
-                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b">No.</th>
-                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b">Nama Siswa</th>
-                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b text-center">Hadir</th>
-                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b text-center">Sakit</th>
-                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b text-center">Izin</th>
-                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b text-center">Alpha</th>
-                            <th class="p-3 font-semibold uppercase bg-gray-100 border-b text-center">Persentase</th>
-                        </tr>
-                    </thead>
-                    <tbody>`;
-        
-        const sortedNama = Object.keys(rekap).sort();
-        if (sortedNama.length > 0) {
-            sortedNama.forEach((namaSiswa, index) => {
-                const totalHadir = rekap[namaSiswa].Hadir;
-                const persentase = totalHariAktifPeriode > 0 ? ((totalHadir / totalHariAktifPeriode) * 100).toFixed(1) + '%' : '0.0%';
-                tableHTML += `<tr class="hover:bg-gray-50">
-                    <td class="p-3 border-b">${index + 1}</td>
-                    <td class="p-3 border-b">${namaSiswa}</td>
-                    <td class="p-3 border-b text-center">${totalHadir}</td>
-                    <td class="p-3 border-b text-center">${rekap[namaSiswa].Sakit}</td>
-                    <td class="p-3 border-b text-center">${rekap[namaSiswa].Izin}</td>
-                    <td class="p-3 border-b text-center">${rekap[namaSiswa].Alpha}</td>
-                    <td class="p-3 border-b text-center font-bold">${persentase}</td>
-                </tr>`;
-            });
-        } else {
-             tableHTML += `<tr><td colspan="7" class="text-center p-6 text-gray-500">Tidak ada data absensi untuk periode ini.</td></tr>`;
-        }
-
-        tableHTML += `</tbody></table></div>`;
-        container.innerHTML = tableHTML;
-    }
-
-    // Fungsi untuk menampilkan Grafik Kehadiran
-    function showGrafikKehadiran() {
-        const contentArea = document.getElementById('contentArea');
-        
-        let filterHTML = `
-            <div class="mb-6 flex flex-col sm:flex-row items-center gap-4">
-                <div class="flex items-center space-x-4">
-                    <label for="grafikPeriodeFilter" class="font-medium">Periode:</label>
-                    <select id="grafikPeriodeFilter" class="border border-gray-300 rounded-lg px-3 py-2">
-                        <option value="bulan">Bulan Ini</option>
-                        <option value="semester1">Semester 1</option>
-                        <option value="semester2">Semester 2</option>
-                    </select>
-                </div>`;
-
-        if (currentUser.role === 'admin') {
-            filterHTML += `
-                <div class="flex items-center space-x-4">
-                    <label for="grafikKelasFilter" class="font-medium">Kelas:</label>
-                    <select id="grafikKelasFilter" class="border border-gray-300 rounded-lg px-3 py-2">
-                        <option value="semua">Semua Kelas</option>
-                        ${[...new Set(Object.values(users).filter(u => u.kelas).map(u => u.kelas))].sort().map(k => `<option value="${k}">${k}</option>`).join('')}
-                    </select>
-                </div>`;
-        }
-        filterHTML += `
-            <div class="ml-auto">
-                <button onclick="exportGrafikPdf()" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium">Export PDF</button>
-            </div>
-        </div>`;
-
-        contentArea.innerHTML = `
-            <h2 id="grafikTitle" class="text-2xl font-bold text-gray-800 mb-2">Grafik Kehadiran</h2>
-            ${filterHTML}
-            <div class="relative h-[500px]">
-                <canvas id="attendanceChart"></canvas>
-            </div>
-        `;
-
-        document.getElementById('grafikPeriodeFilter').addEventListener('change', generateGrafik);
-        if (currentUser.role === 'admin') {
-            document.getElementById('grafikKelasFilter').addEventListener('change', generateGrafik);
-        }
-        generateGrafik();
-    }
-
-    function generateGrafik() {
-        const now = new Date();
-        const periode = document.getElementById('grafikPeriodeFilter').value;
-        let startDate, endDate;
-        let title = `Grafik Kehadiran`;
-        let chartLabels, chartDatasets;
-        let yAxisMax = undefined;
-
-        if (myChart) myChart.destroy();
-        const ctx = document.getElementById('attendanceChart').getContext('2d');
-
-        let dataUntukGrafik;
-        const kelasDipilihAdmin = document.getElementById('grafikKelasFilter')?.value;
-        
-        if (currentUser.role === 'admin') {
-            dataUntukGrafik = (kelasDipilihAdmin === 'semua') ? absensiData : absensiData.filter(d => d.kelas === kelasDipilihAdmin);
-            title += (kelasDipilihAdmin === 'semua') ? ' - Semua Kelas' : ` - Kelas ${kelasDipilihAdmin}`;
-        } else {
-            dataUntukGrafik = absensiData.filter(d => d.kelas === currentUser.kelas);
-            title += ` - Kelas ${currentUser.kelas}`;
-        }
-
-        if (periode === 'bulan') {
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-            title += ` Bulan ${now.toLocaleString('id-ID', { month: 'long' })}`;
-
-            const dataBulanIni = dataUntukGrafik.filter(d => {
-                const tanggalAbsen = new Date(d.tanggal + 'T00:00:00');
-                return tanggalAbsen >= startDate && tanggalAbsen <= endDate;
-            });
-
-            const rekapStatus = { Hadir: 0, Sakit: 0, Izin: 0, Alpha: 0 };
-            dataBulanIni.forEach(d => {
-                if (rekapStatus[d.status] !== undefined) rekapStatus[d.status]++;
-            });
-            
-            chartLabels = ['Hadir', 'Sakit', 'Izin', 'Alpha'];
-            chartDatasets = [{
-                label: 'Jumlah',
-                data: Object.values(rekapStatus),
-                backgroundColor: ['#2ECC71', '#F1C40F', '#3498DB', '#E74C3C'],
-            }];
-
-        } else { // Semester 1 or 2
-            const semesterMonths = (periode === 'semester1') 
-                ? { 6: 'Juli', 7: 'Agustus', 8: 'September', 9: 'Oktober', 10: 'November', 11: 'Desember' }
-                : { 0: 'Januari', 1: 'Februari', 2: 'Maret', 3: 'April', 4: 'Mei', 5: 'Juni' };
-            
-            chartLabels = Object.values(semesterMonths);
-            title += (periode === 'semester1') ? ' Semester 1' : ' Semester 2';
-
-            const year = (periode === 'semester1' && now.getMonth() < 6) ? now.getFullYear() - 1 : now.getFullYear();
-            const startYear = (periode === 'semester2' && now.getMonth() >= 6) ? now.getFullYear() + 1 : now.getFullYear();
-            
-            startDate = (periode === 'semester1') ? new Date(year, 6, 1) : new Date(startYear, 0, 1);
-            endDate = (periode === 'semester1') ? new Date(year, 11, 31) : new Date(startYear, 5, 30);
-            
-            const dataPeriode = dataUntukGrafik.filter(d => {
-                const tanggalAbsen = new Date(d.tanggal + 'T00:00:00');
-                return tanggalAbsen >= startDate && tanggalAbsen <= endDate;
-            });
-
-            const rekapPerBulan = {};
-            let maxHariAktifBulanan = 0;
-            Object.entries(semesterMonths).forEach(([monthIndex, namaBulan]) => {
-                rekapPerBulan[namaBulan] = { Hadir: 0, Sakit: 0, Izin: 0, Alpha: 0 };
-                let hariAktifBulanIni = 0;
-                const startOfMonth = (periode === 'semester1') ? new Date(year, monthIndex, 1) : new Date(startYear, monthIndex, 1);
-                const endOfMonth = (periode === 'semester1') ? new Date(year, parseInt(monthIndex) + 1, 0) : new Date(startYear, parseInt(monthIndex) + 1, 0);
-                for (let d = new Date(startOfMonth); d <= endOfMonth; d.setDate(d.getDate() + 1)) {
-                    if (d.getDay() > 0 && d.getDay() < 6) hariAktifBulanIni++;
-                }
-                if (hariAktifBulanIni > maxHariAktifBulanan) maxHariAktifBulanan = hariAktifBulanIni;
-            });
-
-            dataPeriode.forEach(d => {
-                const bulan = new Date(d.tanggal + 'T00:00:00').getMonth();
-                const namaBulan = semesterMonths[bulan];
-                if (namaBulan && rekapPerBulan[namaBulan][d.status] !== undefined) {
-                    rekapPerBulan[namaBulan][d.status]++;
-                }
-            });
-
-            const jumlahSiswa = (kelasDipilihAdmin === 'semua')
-                ? Object.values(daftarSiswaPerKelas).reduce((sum, arr) => sum + arr.length, 0)
-                : daftarSiswaPerKelas[ (currentUser.role === 'admin' ? kelasDipilihAdmin : currentUser.kelas) ]?.length || 0;
-
-            yAxisMax = maxHariAktifBulanan * jumlahSiswa;
-
-            chartDatasets = [
-                { label: 'Hadir', data: chartLabels.map(m => rekapPerBulan[m].Hadir), backgroundColor: '#2ECC71' },
-                { label: 'Sakit', data: chartLabels.map(m => rekapPerBulan[m].Sakit), backgroundColor: '#F1C40F' },
-                { label: 'Izin', data: chartLabels.map(m => rekapPerBulan[m].Izin), backgroundColor: '#3498DB' },
-                { label: 'Alpha', data: chartLabels.map(m => rekapPerBulan[m].Alpha), backgroundColor: '#E74C3C' },
-            ];
-        }
-
-        document.getElementById('grafikTitle').textContent = title;
-        
-        myChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: chartLabels,
-                datasets: chartDatasets
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: { 
-                    y: { 
-                        beginAtZero: true, 
-                        ticks: { stepSize: 10 },
-                        max: yAxisMax 
-                    } 
-                },
-                plugins: { legend: { display: true } }
-            }
-        });
-    }
-
-
-    // --- FUNGSI-FUNGSI PENDUKUNG ---
-
-    function exportPdf(title, tableId) {
-    const doc = new jsPDF();
-    const namaSekolah = "SDIT Nurul Hikmah";
-
-    // Hitung Tahun Pelajaran otomatis
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1; // Januari = 1
-    let tahunPelajaran;
-    if (month >= 7) {
-        tahunPelajaran = `${year}-${year + 1}`;
-    } else {
-        tahunPelajaran = `${year - 1}-${year}`;
-    }
-
-    // Format tanggal (dd-mm-yyyy) untuk nama file
-    const todayDate = `${String(now.getDate()).padStart(2, '0')}-${String(month).padStart(2, '0')}-${year}`;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(14);
-    doc.text(title, 14, 16);
-    doc.setFontSize(10);
-    doc.text(`${namaSekolah} - Tahun Pelajaran ${tahunPelajaran}`, 14, 22);
-    
-    doc.autoTable({
-        html: '#' + tableId,
-        startY: 28,
-        styles: { fontSize: 8, cellPadding: 1.5 },
-        headStyles: { fillColor: [22, 160, 133], textColor: 255, fontSize: 9 },
-        didDrawPage: function (data) {
-            const pageCount = doc.internal.getNumberOfPages();
-            const pageWidth = doc.internal.pageSize.width;
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            doc.text(
-                `© ${year} umamproject absensi - Halaman ${data.pageNumber} dari ${pageCount}`,
-                pageWidth / 2,
-                doc.internal.pageSize.height - 10,
-                { align: 'center' }
-            );
-        }
-    });
-    
-    let finalY = doc.lastAutoTable.finalY || 50;
-    const pageHeight = doc.internal.pageSize.height;
-    const pageWidth = doc.internal.pageSize.getWidth();
-
-    if (finalY > pageHeight - 70) {
-        doc.addPage();
-        finalY = 20;
-    }
-    
-    const today = new Date().toLocaleDateString('id-ID', { 
-        day: 'numeric', month: 'long', year: 'numeric' 
-    });
-    const kelasYangDipilih = (currentUser.role === 'admin') 
-        ? document.getElementById('kelasFilter').value 
-        : currentUser.kelas;
-    const namaGuru = users[currentUser.username]?.nama || schoolStaff.guruKelas[kelasYangDipilih];
-    const namaKepsek = schoolStaff.kepalaSekolah;
-
-    doc.setFontSize(10);
-    // Mengetahui di kiri, Jakarta di kanan (sebaris)
-    doc.text("Mengetahui,", 20, finalY + 20);
-    doc.text(`Jakarta, ${today}`, pageWidth - 20, finalY + 20, { align: "right" });
-
-    // Tanda tangan
-    doc.text(`Kepala Sekolah ${namaSekolah}`, 20, finalY + 35);
-    doc.text(`Guru Kelas ${kelasYangDipilih}`, pageWidth - 20, finalY + 35, { align: "right" });
-
-    doc.text(namaKepsek, 20, finalY + 45);
-    doc.text(namaGuru, pageWidth - 20, finalY + 45, { align: "right" });
-    
-    // Simpan file
-    const fileName = `${title.replace(/\s/g, '_')}_${tahunPelajaran}_${todayDate}.pdf`;
-    doc.save(fileName);
-}
-
-
-function exportGrafikPdf() {
-    const canvas = document.getElementById('attendanceChart');
-    const title = document.getElementById('grafikTitle').textContent;
-    const imgData = canvas.toDataURL('image/png');
-
-    const doc = new jsPDF('landscape');
-    const namaSekolah = "SDIT Nurul Hikmah"; // ubah di sini kalau nama sekolah berubah
-
-    // Hitung Tahun Pelajaran otomatis
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1; // Januari = 1
-    let tahunPelajaran;
-    if (month >= 7) {
-        tahunPelajaran = `${year}-${year + 1}`;
-    } else {
-        tahunPelajaran = `${year - 1}-${year}`;
-    }
-
-    // Format tanggal (dd-mm-yyyy) untuk nama file
-    const todayDate = `${String(now.getDate()).padStart(2, '0')}-${String(month).padStart(2, '0')}-${year}`;
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(14);
-    doc.text(title, 14, 16);
-    doc.setFontSize(10);
-    doc.text(`${namaSekolah} - Tahun Pelajaran ${tahunPelajaran}`, 14, 22);
-
-    // Hitung ukuran gambar agar proporsional
-    const imgProps = doc.getImageProperties(imgData);
-    const pdfWidth = doc.internal.pageSize.getWidth() - 28; 
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    doc.addImage(imgData, 'PNG', 14, 30, pdfWidth, pdfHeight);
-    
-    // Titik dasar 5pt di bawah grafik
-    const baseY = 30 + pdfHeight + 5;
-    const pageWidth = doc.internal.pageSize.getWidth();
-
-    const today = new Date().toLocaleDateString('id-ID', { 
-        day: 'numeric', month: 'long', year: 'numeric' 
-    });
-
-    const kelasYangDipilih = (currentUser.role === 'admin') 
-        ? (document.getElementById('grafikKelasFilter')?.value || 'Semua Kelas') 
-        : currentUser.kelas;
-
-    const namaGuru = (kelasYangDipilih !== 'semua') 
-        ? (users[currentUser.username]?.nama || schoolStaff.guruKelas[kelasYangDipilih]) 
-        : users['admin'].nama;
-
-    const namaKepsek = schoolStaff.kepalaSekolah;
-
-    doc.setFontSize(10);
-    // Mengetahui di kiri, Jakarta di kanan
-    doc.text("Mengetahui,", 20, baseY);
-    doc.text(`Jakarta, ${today}`, pageWidth - 20, baseY, { align: "right" });
-
-    // Tanda tangan
-    doc.text(`Kepala Sekolah ${namaSekolah}`, 20, baseY + 15);
-
-    if (kelasYangDipilih !== 'semua') {
-        doc.text(`Guru Kelas ${kelasYangDipilih}`, pageWidth - 20, baseY + 15, { align: "right" });
-    }
-
-    doc.text(namaKepsek, 20, baseY + 25);
-    if (kelasYangDipilih !== 'semua') {
-        doc.text(namaGuru, pageWidth - 20, baseY + 25, { align: "right" });
-    }
-
-    // Simpan file
-    const fileName = `${title.replace(/\s/g, '_')}_${tahunPelajaran}_${todayDate}.pdf`;
-    doc.save(fileName);
-}
-
-
-    
-    function populateKelasFilter() {
-        const kelasSet = [...new Set(Object.values(users).filter(u => u.kelas).map(u => u.kelas))].sort();
-        const kelasFilter = document.getElementById('kelasFilter');
-        kelasFilter.innerHTML = '';
-        kelasSet.forEach(kelas => {
-            const option = document.createElement('option');
-            option.value = kelas;
-            option.textContent = kelas;
-            kelasFilter.appendChild(option);
-        });
-        
-        kelasFilter.addEventListener('change', () => {
-             const activeReportTitleEl = document.querySelector('#contentArea h2');
-             if (!activeReportTitleEl) return;
-             const activeReportTitle = activeReportTitleEl.textContent;
-             if (activeReportTitle.includes('Harian')) showLaporanHarian();
-             else if (activeReportTitle.includes('Rekap')) generateRekapTable();
-             else if (activeReportTitle.includes('Form Absensi')) showFormAbsensi();
-             else if (activeReportTitle.includes('Grafik')) generateGrafik();
-        });
-    }
-
-    function updateDateTime() {
-        const now = new Date();
-        document.getElementById('currentDate').textContent = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        document.getElementById('currentTime').textContent = now.toLocaleTimeString('id-ID');
-    }
-
-    // --- LOGIKA LOGIN, LOGOUT, & INISIALISASI ---
-
-    function initApp() {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('appContainer').classList.remove('hidden');
-        
-        document.getElementById('userWelcome').textContent = `Selamat datang, ${currentUser.nama}`;
-        
-        if (currentUser.role === 'admin') {
-            document.getElementById('userRole').textContent = 'Administrator';
-            document.getElementById('userAvatar').textContent = '👑';
-            document.getElementById('adminControls').classList.remove('hidden');
-            populateKelasFilter();
-        } else {
-            document.getElementById('userRole').textContent = `Guru Kelas ${currentUser.kelas}`;
-            document.getElementById('userAvatar').textContent = '👩‍🏫';
-            document.getElementById('adminControls').classList.add('hidden');
-        }
-        
-        showFormAbsensi();
-    }
-
-    function logout() {
-        sessionStorage.removeItem('currentUser');
-        location.reload();
-    }
-
-    document.getElementById('loginForm').addEventListener('submit', function(event) {
-        event.preventDefault();
-        const username = document.getElementById('username').value.toLowerCase().trim();
-        const password = document.getElementById('password').value;
-        const user = users[username];
-
-        if (user && user.password === password) {
-            currentUser = { username, ...user };
-            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
-            initApp();
-        } else {
-            document.getElementById('loginError').classList.remove('hidden');
-        }
-    });
-    
-    function generateInitialData() {
-        const today = new Date().toISOString().slice(0, 10);
-        for (const kelas in daftarSiswaPerKelas) {
-            daftarSiswaPerKelas[kelas].forEach(nama => {
-                const exists = absensiData.some(d => d.tanggal === today && d.nama === nama);
-                if (!exists) {
-                    absensiData.push({
-                        tanggal: today,
-                        nama: nama,
-                        kelas: kelas,
-                        status: "Hadir",
-                        keterangan: ""
-                    });
-                }
-            });
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        generateInitialData();
-        const savedUser = sessionStorage.getItem('currentUser');
-        if (savedUser) {
-            currentUser = JSON.parse(savedUser);
-            initApp();
-        }
-        updateDateTime();
-        setInterval(updateDateTime, 1000);
-    });
-
-</script>
-</body>
-</html>
-
-
-
-
-
-
+            tableHTML += `<p class="mb-4 text-gray-700 font-medium no-print">Total Hari Aktif Bel
