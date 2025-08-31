@@ -661,8 +661,73 @@
 
     // --- FUNGSI-FUNGSI PENDUKUNG ---
 
-    function exportPdf(title, tableId, preview = false) {
+function exportPdf(reportType, tableId) {
+    const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+
+    // Menambahkan variabel namaSekolah yang hilang
+    const namaSekolah = "SDIT Nurul Hikmah";
+
+    const today = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    let tahunPelajaran;
+    if (month >= 7) {
+        tahunPelajaran = `${year}-${year + 1}`;
+    } else {
+        tahunPelajaran = `${year - 1}-${year}`;
+    }
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(14);
+    doc.text(namaSekolah, 14, 16);
+    doc.setFontSize(10);
+    doc.text(`Tahun Pelajaran ${tahunPelajaran}`, 14, 22);
+
+    let title;
+    let filename;
+    if (reportType === 'daily') {
+        const tanggalLaporan = document.getElementById('laporanDate').value;
+        const kelasYangDipilih = (currentUser.role === 'admin') ? document.getElementById('kelasFilter').value : currentUser.kelas;
+        title = `Laporan Harian Absensi Kelas ${kelasYangDipilih} - Tanggal ${tanggalLaporan}`;
+        filename = `Laporan_Harian_Kelas_${kelasYangDipilih}_${tanggalLaporan}.pdf`;
+    } else if (reportType === 'rekap') {
+        const bulanTahun = document.getElementById('rekapDate').value;
+        const kelasYangDipilih = (currentUser.role === 'admin') ? document.getElementById('kelasFilter').value : currentUser.kelas;
+        title = `Rekap Absensi Kelas ${kelasYangDipilih} - Periode ${bulanTahun}`;
+        filename = `Rekap_Absensi_Kelas_${kelasYangDipilih}_${bulanTahun}.pdf`;
+    }
+    doc.setFontSize(12);
+    doc.text(title, 14, 30);
+
+    doc.autoTable({
+        html: `#${tableId}`,
+        startY: 40,
+        theme: 'striped',
+        headStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0] },
+        didDrawPage: function (data) {
+            let finalY = doc.autoTable.previous.finalY;
+            let baseY = finalY + 10;
+            let pageWidth = doc.internal.pageSize.getWidth();
+
+            doc.setFontSize(10);
+            doc.text("Mengetahui,", 20, baseY);
+            doc.text(`Jakarta, ${today}`, pageWidth - 20, baseY, { align: "right" });
+
+            const kelasYangDipilih = (currentUser.role === 'admin') ? document.getElementById('kelasFilter').value : currentUser.kelas;
+            const namaGuru = (currentUser.role === 'admin' && kelasYangDipilih === 'semua') ? users['admin'].nama : (users[currentUser.username]?.nama || schoolStaff.guruKelas[kelasYangDipilih]);
+            const namaKepsek = schoolStaff.kepalaSekolah;
+
+            doc.text(`Kepala Sekolah ${namaSekolah}`, 20, baseY + 15);
+            doc.text(`Guru Kelas ${kelasYangDipilih}`, pageWidth - 20, baseY + 15, { align: "right" });
+
+            doc.text(namaKepsek, 20, baseY + 25);
+            doc.text(namaGuru, pageWidth - 20, baseY + 25, { align: "right" });
+        }
+    });
+
+    doc.save(filename);
 
     // --- ambil grafik ---
     const imgData = document.getElementById("myChart")?.toDataURL("image/png", 1.0);
@@ -973,6 +1038,7 @@ function logout() {
 </script>
 </body>
 </html>
+
 
 
 
