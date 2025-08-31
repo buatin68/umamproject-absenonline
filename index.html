@@ -787,8 +787,11 @@ const kelasYangDipilih = (currentUser.role === 'admin')
     : currentUser.kelas;
 
 const namaGuru = (kelasYangDipilih !== 'semua') 
-    ? (currentUser.nama || schoolStaff.guruKelas[kelasYangDipilih]) 
+    ? (currentUser.role === 'admin' 
+        ? schoolStaff.guruKelas[kelasYangDipilih]   // kalau admin → ambil dari daftar wali kelas
+        : currentUser.nama)                         // kalau guru → pakai nama guru login
     : "";
+
 
 const namaKepsek = schoolStaff.kepalaSekolah;
 
@@ -965,6 +968,7 @@ function logout() {
 </script>
 </body>
 </html>
+
 
 
 
