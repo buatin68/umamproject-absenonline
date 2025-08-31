@@ -769,45 +769,46 @@ function exportGrafikPdf() {
     doc.text(`${namaSekolah} - Tahun Pelajaran ${tahunPelajaran}`, 14, 22);
 
     // Hitung ukuran gambar agar proporsional
-    const imgProps = doc.getImageProperties(imgData);
-    const pdfWidth = doc.internal.pageSize.getWidth() - 28; 
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    doc.addImage(imgData, 'PNG', 14, 30, pdfWidth, pdfHeight);
-    
-    // Titik dasar 5pt di bawah grafik
-    const baseY = 30 + pdfHeight + 5;
-    const pageWidth = doc.internal.pageSize.getWidth();
+const imgProps = doc.getImageProperties(imgData);
+const pdfWidth = doc.internal.pageSize.getWidth() - 28; 
+const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+doc.addImage(imgData, 'PNG', 14, 30, pdfWidth, pdfHeight);
 
-    const today = new Date().toLocaleDateString('id-ID', { 
-        day: 'numeric', month: 'long', year: 'numeric' 
-    });
+// Titik dasar 5pt di bawah grafik
+const baseY = 30 + pdfHeight + 5;
+const pageWidth = doc.internal.pageSize.getWidth();
 
-    const kelasYangDipilih = (currentUser.role === 'admin') 
-        ? (document.getElementById('grafikKelasFilter')?.value || 'Semua Kelas') 
-        : currentUser.kelas;
+const today = new Date().toLocaleDateString('id-ID', { 
+    day: 'numeric', month: 'long', year: 'numeric' 
+});
 
-    const namaGuru = (kelasYangDipilih !== 'semua') 
-        ? (users[currentUser.username]?.nama || schoolStaff.guruKelas[kelasYangDipilih]) 
-        : users['admin'].nama;
+const kelasYangDipilih = (currentUser.role === 'admin') 
+    ? (document.getElementById('grafikKelasFilter')?.value || 'Semua Kelas') 
+    : currentUser.kelas;
 
-    const namaKepsek = schoolStaff.kepalaSekolah;
+const namaGuru = (kelasYangDipilih !== 'semua') 
+    ? (currentUser.nama || schoolStaff.guruKelas[kelasYangDipilih]) 
+    : "";
 
-    doc.setFontSize(10);
-    // Mengetahui di kiri, Jakarta di kanan
-    doc.text("Mengetahui,", 20, baseY);
-    doc.text(`Jakarta, ${today}`, pageWidth - 20, baseY, { align: "right" });
+const namaKepsek = schoolStaff.kepalaSekolah;
 
-    // Tanda tangan
-    doc.text(`Kepala Sekolah ${namaSekolah}`, 20, baseY + 15);
+doc.setFontSize(10);
 
-    if (kelasYangDipilih !== 'semua') {
-        doc.text(`Guru Kelas ${kelasYangDipilih}`, pageWidth - 20, baseY + 15, { align: "right" });
-    }
+// Kiri
+doc.text("Mengetahui,", 20, baseY);
+doc.text(`Kepala Sekolah ${namaSekolah}`, 20, baseY + 10);
 
-    doc.text(namaKepsek, 20, baseY + 25);
-    if (kelasYangDipilih !== 'semua') {
-        doc.text(namaGuru, pageWidth - 20, baseY + 25, { align: "right" });
-    }
+// Kanan
+doc.text(`Jakarta, ${today}`, pageWidth - 20, baseY, { align: "right" });
+if (kelasYangDipilih !== 'semua') {
+    doc.text(`Guru Kelas ${kelasYangDipilih}`, pageWidth - 20, baseY + 10, { align: "right" });
+}
+
+// beri jarak kosong ±25pt untuk tanda tangan
+doc.text(namaKepsek, 20, baseY + 40);
+if (kelasYangDipilih !== 'semua') {
+    doc.text(namaGuru, pageWidth - 20, baseY + 40, { align: "right" });
+}
 
     // Simpan file
     const fileName = `${title.replace(/\s/g, '_')}_${tahunPelajaran}_${todayDate}.pdf`;
@@ -964,6 +965,7 @@ function logout() {
 </script>
 </body>
 </html>
+
 
 
 
